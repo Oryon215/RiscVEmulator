@@ -11,5 +11,5 @@ void Convert(char* c, short* s);
 int strcpy(char* dst, char* src);
 void PrintHexString(unsigned char* buff, unsigned int len);
 void memcpy1(unsigned char* dst, unsigned char* src, unsigned int n);
-
+char strcmp1(char* st1, char* st2);
 #endif // STR_H_INCLUDED

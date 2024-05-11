@@ -10,7 +10,7 @@ State* MakeState1()
     s->csr[mhartid] = getpid();
     s->csr[mstatus] = 0;
     s->csr[mstatus] = ChangeBit(s->csr[mstatus], 2, 2, 4);
-    s->csr[medeleg] = 0;
+    s->csr[medeleg] = (1 << 8);
     s->csr[mideleg] = 0;
     s->csr[mtvec] = (int)MIVT;
     s->csr[stvec] = (int)SIVT;

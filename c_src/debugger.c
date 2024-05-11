@@ -1,15 +1,28 @@
 #include "../headers/cpu.h"
 
+#define symbol_table_entry_size 16
+#define text_section_index 1
+#define section_header_index 14
+#define section_header_size_index 20
+#define symbol_addr_index 4
+
 void Break(State* s, int b)
 {
     s->breakpoints[s->current_breakpoint % MaxBreakpoints] = b;
     s->current_breakpoint ++;
+    printf("Breakpoint set at 0x%x.\n", b);
 }
 
 void BreakString(State* s, char* st)
 {
     int i = 1;
     char* st2 = st;
+    st2[strlen(st2) - 1] = 0x0;
+    if (strcmp1(st2, "b n"))
+    {
+        Break(s, s->pc + 4);
+        return;
+    }
     while (st2[i - 1] != ' ' && st2[i - 1] != 0x0)
     {
         i++;
@@ -19,7 +32,6 @@ void BreakString(State* s, char* st)
     st2+=2;
     int b = ExtractFirstNumber(st2, 16);
     Break(s, b);
-    printf("Breakpoint set at 0x%x.\n", b);
 }
 
 int ExtractFirstNumber(const char *str, int base) {
@@ -43,8 +55,11 @@ void CheckBreapoints(State* s)
 
 void BreakPoint(State* s)
 {
+    printf("%s\n", instruction);
+    PrintSymbol(s);
     while (1)
     {
+
         printf("Breakpoint at 0x%x\n", s->pc);
         printf("->");
         char* buffer = (char*)malloc(20);
@@ -62,7 +77,7 @@ void BreakPoint(State* s)
         case (unsigned int)'b':
             BreakString(s, buffer);
             break;
-        case 23:
+        case '\n':
             continue;
         default:
             printf("Operation not permitted.\n");
@@ -76,6 +91,10 @@ void PrintMemory(State* s, char* st)
 {
     int i = 1;
     char* st2 = st;
+    if (strcmp(st, "p state"))
+    {
+        PrintState(s);
+    }
     while (st2[i - 1] != ' ' && st2[i - 1] != 0x0)
     {
         i++;
@@ -112,4 +131,21 @@ void PrintMemory(State* s, char* st)
         printf("pc=%d\n", s->pc);
     }
 
+}
+
+void PrintSymbol(State* s)
+{
+    for (int i = 0; i < s->symtab_size / symbol_table_entry_size; i++)
+    {
+        short* ptr_shndx = s->symtab + i * symbol_table_entry_size + section_header_index;
+        if (*ptr_shndx == text_section_index)
+        {
+            int* ptr_addr = s->symtab + i * symbol_table_entry_size + symbol_addr_index;
+            if (s->pc == *ptr_addr)
+            {
+                int* ptr_name = s->symtab + i * symbol_table_entry_size;
+                printf("%d: %s\n", s->pc, s->strtab + *ptr_name);
+            }
+        }
+    }
 }

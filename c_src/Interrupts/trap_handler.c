@@ -7,7 +7,6 @@ void RaiseInterrupt(State* s, unsigned char error_code)
 
 void S_Catch(State* s, unsigned char error_code, unsigned char exception)
 {
-
     if (!exception)
     {
         if ((s->csr[sie] >> error_code) && (s->csr[sip] >> error_code))
@@ -38,7 +37,6 @@ void S_Catch(State* s, unsigned char error_code, unsigned char exception)
 void M_Catch(State* s, unsigned char error_code, unsigned char exception)
 {
     char delegation;
-
     if (!exception)
     {
         if ((s->csr[mie] >> error_code) && (s->csr[mip] >> error_code))
@@ -140,7 +138,7 @@ void SIVT(State* s, unsigned char error_code, unsigned char exception)
 char ECALL(int cmd, State* s)
 {
     M_Catch(s, 8, 1);
-    printf("ECALL\n");
+    //printf("ECALL\n");
     return 1;
 
 }

@@ -10,6 +10,8 @@
 
 #define MaxBreakpoints 10
 
+extern char* instruction[32];
+
 typedef struct Segment
 {
     int addr;
@@ -28,6 +30,10 @@ typedef struct State {
     unsigned int segment_count;
     int* breakpoints[MaxBreakpoints];
     int current_breakpoint;
+    char* symtab;
+    unsigned int symtab_size;
+    char* strtab;
+    unsigned int strtab_size;
 } State;
 
 int ChangeBit(unsigned int num, int args, ...);

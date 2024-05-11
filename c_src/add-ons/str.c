@@ -9,6 +9,13 @@ int min(int a, int b)
     return b;
 }
 
+int max(int a, int b)
+{
+    if (a > b)
+        return a;
+    return b;
+}
+
 int strlen(char* str)
 {
     int i = 0;
@@ -17,6 +24,19 @@ int strlen(char* str)
         i++;
     }
     return i;
+}
+
+char strcmp1(char* st1, char* st2)
+{
+    int i = 0;
+
+    if (strlen(st1) != strlen(st2))
+        return 0;
+    while (i < strlen(st1) && st1[i] == st2[i])
+    {
+        i++;
+    }
+    return i == strlen(st1);
 }
 
 unsigned char ConvertC(char c)
@@ -82,6 +102,7 @@ int strcpy(char* dst, char* src)
 {
     int i, len = strlen(src);
     memcpy1(dst, src, len);
+    dst[len] = 0x0;
     return len;
 }
 
@@ -96,7 +117,7 @@ void memcpy1(unsigned char* dst, unsigned char* src, unsigned int n)
 
 void PrintHexString(unsigned char* buff, unsigned int len)
 {
-    int i, j;
+    int i;
     printf("memory size: %d\n", len);
     for (i = 0; i < len ; i++)
     {
@@ -109,6 +130,35 @@ void PrintHexString(unsigned char* buff, unsigned int len)
         printf("%s: %s ", index, value);
         free(index);
         free(value);
+    }
+
+}
+
+void Print2(unsigned char* buff, unsigned int len, char* format)
+{
+    int i;
+    for (i = 0; i < len; i++)
+    {
+        printf("%d: ", i);
+        printf(format, buff[i]);
+        if (i % 4 == 0 && i != 0)
+        {
+            printf("\n");
+        }
+    }
+
+}
+
+void Print1(unsigned char* buff, unsigned int len, char* format)
+{
+    int i;
+    for (i = 0; i < len; i++)
+    {
+        printf(format, buff[i]);
+        if (buff[i] == 0x0)
+        {
+            printf(" ");
+        }
     }
 
 }

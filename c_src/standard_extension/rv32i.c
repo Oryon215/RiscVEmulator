@@ -8,7 +8,7 @@ char LUI(int cmd, State* s) // load upper immediate
     int imm;
     U_Type(cmd, &rd, &imm);
     s->general_purpose[rd] = (imm << 12);
-    printf("LUI x%d %d\n", rd, imm);
+    sprintf(instruction, "LUI x%d %d\n", rd, imm);
     return 1;
 }
 
@@ -17,8 +17,8 @@ char AUIPC(int cmd, State* s) // add upper immediate to PC
     char rd;
     int imm;
     U_Type(cmd, &rd, &imm);
-    s->general_purpose[rd] = s->pc + imm ;
-    printf("AUIPC x%d, %d\n", rd, imm);
+    s->general_purpose[rd] = s->pc + (imm << 12);
+    sprintf(instruction, "AUIPC x%d, %d\n", rd, imm);
     return 1;
 }
 
@@ -44,7 +44,7 @@ char JAL(int cmd, State* s) // jump and link
     s->general_purpose[rd] = s->pc + 4;
     s->pc += imm;
     s->pc -= 4; // it will be added later
-    printf("JAL x%d, %d\n", rd, imm);
+    sprintf(instruction, "JAL x%d, %d\n", rd, imm);
     return 1;
 }
 
@@ -65,7 +65,7 @@ char JALR(int cmd, State* s) // jump and link register
     s->general_purpose[rd] = s->pc + 4;
     s->pc = ((s->general_purpose[rs1] + imm) >> 1) << 1;
     s->pc -= 4;
-    printf("JALR x%d, x%d, %d\n", rd, rs1, imm);
+    sprintf(instruction, "JALR x%d, x%d, %d\n", rd, rs1, imm);
     return 1;
 }
 
@@ -79,14 +79,14 @@ char CJUMPS(int cmd, State* s) //conditional jumps
         M_Catch(s, 0, 1);
     }
     char ret = 0;
-    char instruction[32];
+    char opcode[32];
     switch (funct3) {
     case 0b000: // BEQ
         if (s->general_purpose[rs1] == s->general_purpose[rs2]) {
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(instruction, "BEQ");
+        strcpy(opcode, "BEQ");
         ret = 1;
         break;
     case 0b001: // BNE
@@ -94,7 +94,7 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(instruction, "BNE");
+        strcpy(opcode, "BNE");
         ret = 1;
         break;
     case 0b100: // BLT
@@ -102,7 +102,7 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(instruction, "BLT");
+        strcpy(opcode, "BLT");
         ret = 1;
         break;
     case 0b101: // BGE
@@ -110,7 +110,7 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(instruction, "BGE");
+        strcpy(opcode, "BGE");
         ret = 1;
         break;
     case 0b110: // BLTU
@@ -121,7 +121,7 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(instruction, "BLTU");
+        strcpy(opcode, "BLTU");
         ret = 1;
         break;
     }
@@ -133,12 +133,12 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(instruction, "BGEU");
+        strcpy(opcode, "BGEU");
         ret = 1;
         break;
     }
     }
-    printf("%s x%d, x%d, %d\n", instruction, rs1, rs2, imm);
+    sprintf(instruction, "%s x%d, x%d, %d\n", opcode, rs1, rs2, imm);
     return ret;
 }
 
@@ -149,30 +149,29 @@ char STORE(int cmd, State* s) // store in memory
     S_Type(cmd, &funct3, &rs1, &rs2, &imm);
     int address = s->general_purpose[rs1] + imm;
     char ret = 0;
-    char instruction[32];
+    char opcode[32];
     CheckOperation(s, W, address, 1);
-
     switch (funct3)
     {
     case 0b000: //SB
-        strcpy(instruction, "SB");
+        strcpy(opcode, "SB");
         s->memory[address] = s->general_purpose[rs2];
         ret = 1;
         break;
     case 0b001: ;//SH
-        strcpy(instruction, "SH");
+        strcpy(opcode, "SH");
         short* ptr1 = (short*)(s->memory + address);
         ptr1 = s->general_purpose[rs2];
         ret = 1;
         break;
     case 0b010: ;//SW
-        strcpy(instruction, "SW");
+        strcpy(opcode, "SW");
         int* ptr2 = (int*)(s->memory + address);
-        ptr2 = s->general_purpose[rs2];
+        *ptr2 = s->general_purpose[rs2];
         ret = 1;
         break;
     }
-    printf("%s x%d %d(x%d)\n", instruction, rs2, imm, rs1);
+    sprintf(instruction, "%s x%d %d(x%d)\n", opcode, rs2, imm, rs1);
     return ret;
 }
 
@@ -182,43 +181,48 @@ char LOAD(int cmd, State* s) // load from memory
     short imm;
     I_Type(cmd, &funct3, &rs1, &rd, &imm);
     int address = s->general_purpose[rs1] + imm;
-    char sign = s->memory[address] & (1 << 7);
     char ret = 0;
-    char instruction[32];
-
+    char opcode[32];
     CheckOperation(s, R, address, 1);
-
     switch (funct3) {
         case 0b000: // LB
-            strcpy(instruction, "LB");
+            strcpy(opcode, "LB");
             s->general_purpose[rd] = s->memory[address];
+            if ((s->memory[address] >> 7) & 1)
+            {
+                s->general_purpose[rd] |= get_n(24) << 8;
+            }
             ret = 1;
             break;
         case 0b001: // LH
-            strcpy(instruction, "LH");
+            strcpy(opcode, "LH");
             short* ptr1 = s->memory + address;
             s->general_purpose[rd] = *ptr1;
+            if ((*ptr1 >> 15) & 1)
+            {
+                s->general_purpose[rd] |= get_n(16) << 16;
+            }
             ret = 1;
             break;
         case 0b010: // LW
-            strcpy(instruction, "LW");
+            strcpy(opcode, "LW");
             int* ptr2 = s->memory + address;
             s->general_purpose[rd] = *ptr2;
             ret = 1;
             break;
         case 0b100: // LBU
-            strcpy(instruction, "LBU");
-            s->general_purpose[rd] = (sign << 23) | (s->memory[address]);
+            strcpy(opcode, "LBU");
+            s->general_purpose[rd] = s->memory[address];
             ret = 1;
             break;
         case 0b101: // LHU
-            strcpy(instruction, "LHU");
+            strcpy(opcode, "LHU");
             short* ptr3 = s->memory + address;
-            s->general_purpose[rd] = (sign << 23) | (*ptr3);
+            s->general_purpose[rd] = *ptr3;
             ret = 1;
             break;
     }
-    printf("%s x%d, %d(x%d)\n", instruction, rd, imm, rs1);
+    sprintf(instruction, "%s x%d, %d(x%d)\n", opcode, rd, imm, rs1);
     return ret;
 }
 
@@ -227,41 +231,41 @@ char ALU(int cmd, State* s) // arithmetic and logical operations
     char rs1, rd, rs2, funct3, funct7;
     R_Type(cmd, &rd, &funct3, &rs1, &rs2, &funct7);
     char ret = 0;
-    char instruction[32];
+    char opcode[32];
     switch (funct3)
     {
     case 0b000:
         switch (funct7)
         {
         case 0b0000000: // ADD
-            strcpy(instruction, "ADD");
+            strcpy(opcode, "ADD");
             s->general_purpose[rd] = s->general_purpose[rs1] + s->general_purpose[rs2];
             ret = 1;
             break;
         case 0b0100000: // SUB
-            strcpy(instruction, "SUB");
+            strcpy(opcode, "SUB");
             s->general_purpose[rd] = s->general_purpose[rs1] - s->general_purpose[rs2];
             ret = 1;
             break;
         }
         break;
     case 0b001: // SLL
-        strcpy(instruction, "SLL");
-        s->general_purpose[rd] = (s->general_purpose[rs1] >> s->general_purpose[rs2]);
+        strcpy(opcode, "SLL");
+        s->general_purpose[rd] = (s->general_purpose[rs1] << s->general_purpose[rs2]);
         ret = 1;
         break;
     case 0b010: // SLT
-        strcpy(instruction, "SLT");
+        strcpy(opcode, "SLT");
         s->general_purpose[rd] = s->general_purpose[rs1] < s->general_purpose[rs2];
         ret = 1;
         break;
     case 0b011: //SLTU
-        strcpy(instruction, "SLTU");
+        strcpy(opcode, "SLTU");
         s->general_purpose[rd] = (unsigned)s->general_purpose[rs1] < (unsigned)s->general_purpose[rs2];
         ret = 1;
         break;
     case 0b100: // XOR
-        strcpy(instruction, "XOR");
+        strcpy(opcode, "XOR");
         s->general_purpose[rd] = s->general_purpose[rs1] ^ s->general_purpose[rs2];
         ret = 1;
         break;
@@ -269,12 +273,12 @@ char ALU(int cmd, State* s) // arithmetic and logical operations
         switch (funct7)
         {
         case 0b0000000: //SRL
-            strcpy(instruction, "SRL");
+            strcpy(opcode, "SRL");
             s->general_purpose[rd] = (s->general_purpose[rs1] >> s->general_purpose[rs2]);
             ret = 1;
             break;
         case 0b0100000: ;//SRA
-            strcpy(instruction, "SRA");
+            strcpy(opcode, "SRA");
             int sign = (rs1 < 0) << 31;
             s->general_purpose[rd] = (s->general_purpose[rs1] >> s->general_purpose[rs2]) | sign;
             ret = 1;
@@ -283,17 +287,17 @@ char ALU(int cmd, State* s) // arithmetic and logical operations
         }
         break;
     case 0b110: //OR
-        strcpy(instruction, "OR");
+        strcpy(opcode, "OR");
         s->general_purpose[rd] = s->general_purpose[rs1] | s->general_purpose[rs2];
         ret = 1;
         break;
     case 0b111: //AND
-        strcpy(instruction, "AND");
+        strcpy(opcode, "AND");
         s->general_purpose[rd] = s->general_purpose[rs1] & s->general_purpose[rs2];
         ret = 1;
         break;
     }
-    printf("%s x%d, x%d, x%d\n", instruction, rd, rs1, rs2);
+    sprintf(instruction, "%s x%d, x%d, x%d\n", opcode, rd, rs1, rs2);
     return ret;
 }
 
@@ -305,43 +309,43 @@ char ALUI(int cmd, State* s) // immediate arithmetic and logical operations
     char ret = 0;
     char funct7 = get_funct7(cmd);
     char shamt = imm & get_n(5);
-    char instruction[32];
+    char opcode[32];
     switch (funct3)
     {
     case 0b000: //ADDI
-        strcpy(instruction, "ADDI");
+        strcpy(opcode, "ADDI");
         s->general_purpose[rd] = s->general_purpose[rs1] + imm;
         ret = 1;
         break;
     case 0b010: //SLTI
-        strcpy(instruction, "SLTI");
+        strcpy(opcode, "SLTI");
         s->general_purpose[rd] = s->general_purpose[rs1] < imm;
         ret = 1;
         break;
     case 0b011: //SLTIU
-        strcpy(instruction, "SLTIU");
+        strcpy(opcode, "SLTIU");
         s->general_purpose[rd] = (unsigned)s->general_purpose[rs1] < (unsigned)imm;
         ret = 1;
         break;
     case 0b100: //XORI
-        strcpy(instruction, "XORI");
+        strcpy(opcode, "XORI");
         s->general_purpose[rd] = s->general_purpose[rs1] ^ imm;
         ret = 1;
         break;
 
     case 0b110: //ORI
-        strcpy(instruction, "ORI");
+        strcpy(opcode, "ORI");
         s->general_purpose[rd] = s->general_purpose[rs1] | imm;
         ret = 1;
         break;
     case 0b111: //ANDI
-        strcpy(instruction, "ANDI");
+        strcpy(opcode, "ANDI");
         s->general_purpose[rd] = s->general_purpose[rs1] & imm;
         ret = 1;
         break;
     case 0b001: //SLLI
         imm = shamt;
-        strcpy(instruction, "SLLI");
+        strcpy(opcode, "SLLI");
         s->general_purpose[rd] = (s->general_purpose[rs1] << shamt);
         ret = 1;
         break;
@@ -350,19 +354,19 @@ char ALUI(int cmd, State* s) // immediate arithmetic and logical operations
         switch (funct7)
         {
         case 0b0000000: ;//SRLI
-            strcpy(instruction, "SRLI");
+            strcpy(opcode, "SRLI");
             s->general_purpose[rd] = (s->general_purpose[rs1] >> shamt);
             ret = 1;
             break;
         case 0b0100000: ;//SRAI
-            strcpy(instruction, "SRAI");
+            strcpy(opcode, "SRAI");
             int sign = (rs1 < 0) << 31;
             s->general_purpose[rd] = (s->general_purpose[rs1] >> shamt) | sign;
             ret = 1;
             break;
         }
     }
-    printf("%s x%d, x%d, %d\n", instruction, rd, rs1, imm);
+    sprintf(instruction, "%s x%d, x%d, %d\n", opcode, rd, rs1, imm);
     return ret;
 }
 
