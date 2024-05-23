@@ -34,56 +34,20 @@ void BreakString(State* s, char* st)
     Break(s, b);
 }
 
-int ExtractFirstNumber(const char *str, int base) {
-    char *endptr;
-    long num = strtol(str, &endptr, base);
-
-    return (int)num;
-}
-
-void CheckBreapoints(State* s)
+void PrintSymbol(State* s)
 {
-    for (int i = 0; i < s->current_breakpoint; i++)
+    for (int i = 0; i < s->symtab_size / symbol_table_entry_size; i++)
     {
-        if (s->pc == s->breakpoints[i])
+        short* ptr_shndx = s->symtab + i * symbol_table_entry_size + section_header_index;
+        if (*ptr_shndx == text_section_index)
         {
-            BreakPoint(s);
-            return;
+            int* ptr_addr = s->symtab + i * symbol_table_entry_size + symbol_addr_index;
+            if (s->pc == *ptr_addr)
+            {
+                int* ptr_name = s->symtab + i * symbol_table_entry_size;
+                printf("%d: %s\n", s->pc, s->strtab + *ptr_name);
+            }
         }
-    }
-}
-
-void BreakPoint(State* s)
-{
-    printf("%s\n", instruction);
-    PrintSymbol(s);
-    while (1)
-    {
-
-        printf("Breakpoint at 0x%x\n", s->pc);
-        printf("->");
-        char* buffer = (char*)malloc(20);
-        fgets(buffer, 20, stdin);
-        switch ((unsigned int)buffer[0])
-        {
-        case (unsigned int)'q':
-            exit(0);
-            break;
-        case (unsigned int)'p':
-            PrintMemory(s, buffer);
-            break;
-        case (unsigned int)'c':
-            return;
-        case (unsigned int)'b':
-            BreakString(s, buffer);
-            break;
-        case '\n':
-            continue;
-        default:
-            printf("Operation not permitted.\n");
-            break;
-        }
-        free(buffer);
     }
 }
 
@@ -91,7 +55,7 @@ void PrintMemory(State* s, char* st)
 {
     int i = 1;
     char* st2 = st;
-    if (strcmp(st, "p state"))
+    if (strcmp1(st, "p state"))
     {
         PrintState(s);
     }
@@ -133,19 +97,55 @@ void PrintMemory(State* s, char* st)
 
 }
 
-void PrintSymbol(State* s)
+void BreakPoint(State* s)
 {
-    for (int i = 0; i < s->symtab_size / symbol_table_entry_size; i++)
+    printf("%s\n", instruction);
+    PrintSymbol(s);
+    while (1)
     {
-        short* ptr_shndx = s->symtab + i * symbol_table_entry_size + section_header_index;
-        if (*ptr_shndx == text_section_index)
+
+        printf("Breakpoint at 0x%x\n", s->pc);
+        printf("->");
+        char* buffer = (char*)malloc(20);
+        fgets(buffer, 20, stdin);
+        switch ((unsigned int)buffer[0])
         {
-            int* ptr_addr = s->symtab + i * symbol_table_entry_size + symbol_addr_index;
-            if (s->pc == *ptr_addr)
-            {
-                int* ptr_name = s->symtab + i * symbol_table_entry_size;
-                printf("%d: %s\n", s->pc, s->strtab + *ptr_name);
-            }
+        case (unsigned int)'q':
+            exit(0);
+            break;
+        case (unsigned int)'p':
+            PrintMemory(s, buffer);
+            break;
+        case (unsigned int)'c':
+            return;
+        case (unsigned int)'b':
+            BreakString(s, buffer);
+            break;
+        case '\n':
+            continue;
+        default:
+            printf("Operation not permitted.\n");
+            break;
+        }
+        free(buffer);
+    }
+}
+
+int ExtractFirstNumber(const char *str, int base) {
+    char *endptr;
+    long num = strtol(str, &endptr, base);
+
+    return (int)num;
+}
+
+void CheckBreapoints(State* s)
+{
+    for (int i = 0; i < s->current_breakpoint; i++)
+    {
+        if (s->pc == s->breakpoints[i])
+        {
+            BreakPoint(s);
+            return;
         }
     }
 }

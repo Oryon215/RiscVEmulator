@@ -5,18 +5,21 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <dlfcn.h>
 #include "str.h"
 #include "types.h"
 
 #define MaxBreakpoints 10
 
-extern char* instruction[32];
+extern char instruction[60];
 
 typedef struct Segment
 {
-    int addr;
-    int size;
-    char permissions;
+    unsigned int addr;
+    unsigned int size;
+    unsigned char permissions;
 }Segment;
 
 typedef struct State {
@@ -40,6 +43,7 @@ int ChangeBit(unsigned int num, int args, ...);
 
 int EmulateRiscV(State* state);
 void UnimplementedInstruction(int cmd, State* state);
+void PrintState(State* state);
 // memory handling
 char CheckOperation(State* s, char operation, int addr, char exception);
 #define R 2
@@ -47,7 +51,7 @@ char CheckOperation(State* s, char operation, int addr, char exception);
 #define X 0
 #define in_range(a, b, c) (a <= b && b <= c)
 
-#define get_n(n) (int)(pow(2, n) - 1)
+#define get_n(n) (unsigned int)(pow(2, n) - 1)
 #define get_rd(cmd) ((cmd >> 7) & get_n(5))
 #define get_funct3(cmd) ((cmd >> 12) & get_n(3))
 #define get_funct7(cmd) ((cmd >> 25) & get_n(7))
@@ -179,10 +183,19 @@ unsigned char KeyboardPending();
 unsigned char MousePending();
 
 //loading
-void Load(State* s, char* filename);
+void* Load(State* s, char* filename, char* addonname);
 
 //debugger
 void Break(State* s, int b);
 void CheckBreapoints(State* s);
 
+//add-ons:
+extern void (*InitAddOn)(State* s);
+extern void (*AddOn)(State* s);
+
+//Heap functions
+void* MMAP(State* s, unsigned int addr, size_t length, int protect, int flags, int filedes, off_t offset);
+int BRK(State* s, unsigned int addr);
+int MUNMAP(State* s, unsigned int addr, size_t length);
+void* AddMemory(State* s, char* st);
 #endif // CPU_H_INCLUDED

@@ -1,6 +1,4 @@
 #include "../headers/cpu.h"
-#include <sys/stat.h>
-#include <fcntl.h>
 
 #define segment_memory_size_index 20
 #define segment_file_size_index 16
@@ -13,8 +11,10 @@
 #define section_file_offset_index 16
 #define symbol_table 2
 #define string_table 3
-
 #define STACK_SIZE 20000
+
+void (*InitAddOn)(State* s);
+void (*AddOn)(State* s);
 
 char* LoadFile(char* filename)
 {
@@ -41,6 +41,74 @@ char* LoadFile(char* filename)
     return file_contents;
 }
 
+void PrintHeader(int* header)
+{
+    int p_type = header[0];
+    printf("Type: ");
+    switch (p_type)
+    {
+    case 0:
+        printf("PT_NULL");
+        break;
+    case 1:
+        printf("PT_LOAD");
+        break;
+    case 2:
+        printf("PT_DYNAMIC");
+        break;
+    case 3:
+        printf("PT_INTERP");
+        break;
+    case 4:
+        printf("PT_NOTE");
+        break;
+    case 5:
+        printf("PT_SHLIB");
+        break;
+    case 6:
+        printf("PT_PHDR");
+        break;
+    default:
+        printf("PT_LOPROC/PT_HIPROC");
+        break;
+
+    }
+
+    printf("\n");
+    printf("Offset: %d\n", header[segment_file_offset_index / 4]);
+    printf("Virtual Address: 0x%x\n", header[segment_va_index / 4]);
+    printf("Physical Address: 0x%x\n", header[segment_va_index / 4 + 1]);
+    printf("File Size: %d\n", header[segment_file_size_index / 4]);
+    printf("Memory Size: %d\n", header[segment_memory_size_index / 4]);
+    printf("Flags:");
+    if ((header[segment_permissions / 4] >> R) & 1)
+    {
+        printf("R");
+    }
+    else
+    {
+        printf(" ");
+    }
+    if ((header[segment_permissions / 4] >> W) & 1)
+    {
+        printf("W");
+    }
+    else
+    {
+        printf(" ");
+    }
+    if ((header[segment_permissions / 4] >> X) & 1)
+    {
+        printf("X");
+    }
+    else
+    {
+        printf(" ");
+    }
+    printf("\n");
+    printf("Alignment: %d\n", header[segment_permissions / 4 + 1]);
+}
+
 void LoadSegments(State* s, char* file)
 {
     char* memory;
@@ -52,7 +120,7 @@ void LoadSegments(State* s, char* file)
     short e_phentsize = ((short*)file)[21];
     short e_phnum = ((short*)file)[22];
 
-    s->memory_segments = (Segment*)malloc(sizeof(Segment) * e_phnum);
+    s->memory_segments = (Segment*)malloc(sizeof(Segment) * (e_phnum + 2) );
     // get program size
     printf("Program header entries count: %hi\n", e_phnum);
     printf("Program header entry size: %hi\n", e_phentsize);
@@ -71,7 +139,7 @@ void LoadSegments(State* s, char* file)
     // skip riscv attributes
     printf("\nProgram Header Table:\n");
     int address = 0;
-    for(i = 1; i < e_phnum; i++)
+    for(i = 0; i < e_phnum; i++)
     {
         printf("Segment Number %d --\n", i);
         ptr = file + e_phoff + i * e_phentsize;
@@ -79,17 +147,19 @@ void LoadSegments(State* s, char* file)
         memcpy1(s->memory + address, file + *(ptr + segment_file_offset_index/4), *(ptr + segment_file_size_index/4));
         PrintHeader(ptr);
         printf("\n");
-        s->memory_segments[i - 1].addr = address;
-        s->memory_segments[i - 1].permissions = ptr[segment_permissions / 4];
-        s->memory_segments[i - 1].size = ptr[segment_memory_size_index / 4];
+        s->memory_segments[i].addr = address;
+        s->memory_segments[i].permissions = ptr[segment_permissions / 4];
+        s->memory_segments[i].size = ptr[segment_memory_size_index / 4];
     }
+    //Stack Loading
     s->general_purpose[sp] = address + ptr[segment_memory_size_index / 4] + STACK_SIZE;
     s->general_purpose[s0] = s->general_purpose[sp];
-    s->memory_segments[i].addr = s->general_purpose[sp];
-    s->memory_segments[i].permissions = 0x111;
+    s->memory_segments[i].addr = s->general_purpose[sp] - STACK_SIZE;
+    s->memory_segments[i].permissions = 0b111;
     s->memory_segments[i].size = STACK_SIZE;
-    s->segment_count = e_phnum;
-    printf("addr:%d\n", s->memory[145919]);
+
+
+    s->segment_count = e_phnum + 2;
 }
 
 void LoadSymtab(State* s, char* file)
@@ -161,7 +231,12 @@ void LoadStrtab(State* s, char* file)
     }
 }
 
-void Load(State* s, char* filename) {
+void* LoadAddOn(char* dllname)
+{
+    return dlopen(dllname, RTLD_LAZY | RTLD_GLOBAL);
+}
+
+void* Load(State* s, char* filename, char* addonname) {
 
     char* file = LoadFile(filename);
     int e_entry = ((int*)file)[6];
@@ -172,74 +247,19 @@ void Load(State* s, char* filename) {
     LoadSymtab(s, file);
     LoadStrtab(s, file);
     printf("\n");
+    char* error;
+    void* dll = LoadAddOn(addonname);
+    if (!dll) {
+        fprintf(stderr, "%s\n", dlerror());
+        exit(EXIT_FAILURE);
+    }
+    InitAddOn = dlsym(dll, "init_add_on");
+    AddOn = dlsym(dll, "addon");
+    if ((error = dlerror()) != NULL)  {
+        fprintf(stderr, "%s\n", error);
+        exit(EXIT_FAILURE);
+    }
+
+    return dll;
 
 }
-
-void PrintHeader(int* header)
-{
-    int p_type = header[0];
-    printf("Type: ");
-    switch (p_type)
-    {
-    case 0:
-        printf("PT_NULL");
-        break;
-    case 1:
-        printf("PT_LOAD");
-        break;
-    case 2:
-        printf("PT_DYNAMIC");
-        break;
-    case 3:
-        printf("PT_INTERP");
-        break;
-    case 4:
-        printf("PT_NOTE");
-        break;
-    case 5:
-        printf("PT_SHLIB");
-        break;
-    case 6:
-        printf("PT_PHDR");
-        break;
-    default:
-        printf("PT_LOPROC/PT_HIPROC");
-        break;
-
-    }
-
-    printf("\n");
-    printf("Offset: %d\n", header[segment_file_offset_index / 4]);
-    printf("Virtual Address: %d\n", header[segment_va_index / 4]);
-    printf("Physical Address: %d\n", header[segment_va_index / 4 + 1]);
-    printf("File Size: %d\n", header[segment_file_size_index / 4]);
-    printf("Memory Size: %d\n", header[segment_memory_size_index / 4]);
-    printf("Flags:");
-    if ((header[segment_permissions / 4] >> R) & 1)
-    {
-        printf("R");
-    }
-    else
-    {
-        printf(" ");
-    }
-    if ((header[segment_permissions / 4] >> W) & 1)
-    {
-        printf("W");
-    }
-    else
-    {
-        printf(" ");
-    }
-    if ((header[segment_permissions / 4] >> X) & 1)
-    {
-        printf("X");
-    }
-    else
-    {
-        printf(" ");
-    }
-    printf("\n");
-    printf("Alignment: %d\n", header[segment_permissions / 4 + 1]);
-}
-

@@ -90,10 +90,10 @@ void MIVT(State* s, unsigned char error_code, unsigned char exception)
         switch (error_code)
         {
         case 0: // instruction address misaligned
-            printf("Instruction address misaligned at %d.\nProgram terminated.\n", s->pc);
+            printf("Instruction address misaligned at %x.\nProgram terminated.\n", s->pc);
             exit(0);
         case 1: // instruction access fault
-            printf("Instruction access fault at %d.\nProgram terminated.\n", s->pc);
+            printf("Instruction access fault at %x.\nProgram terminated.\n", s->pc);
             exit(0);
         case 2: // illegal instruction
         {
@@ -105,13 +105,13 @@ void MIVT(State* s, unsigned char error_code, unsigned char exception)
             // not implemented yet
             break;
         case 5: // load access fault
-            printf("Load access fault at %d.\nProgram terminated.\n", s->pc);
+            printf("Load access fault at %x.\nProgram terminated.\n", s->pc);
             exit(0);
         case 6: //Store/AMO address misaligned
             // not implemented
             break;
         case 7: // Store/AMO access fault
-            printf("Store access fault at %d.\nProgram terminated.\n", s->pc);
+            printf("Store access fault at %x.\nProgram terminated.\n", s->pc);
             exit(0);
         case 8: // Supervisor Environment Call
             // to be implemented by tool

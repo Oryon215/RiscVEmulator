@@ -1,7 +1,7 @@
 #include "../../headers/types.h"
 #include <stdio.h>
 
-void R_Type(int cmd, char* rd, char* funct3, char* rs1, char* rs2, char* funct7)
+void R_Type(unsigned int cmd, char* rd, char* funct3, char* rs1, char* rs2, char* funct7)
 {
     *rs1 = get_rs1(cmd);
     *rd = get_rd(cmd);
@@ -10,7 +10,7 @@ void R_Type(int cmd, char* rd, char* funct3, char* rs1, char* rs2, char* funct7)
     *funct7 = get_funct7(cmd);
 }
 
-void I_Type(int cmd, char* funct3, char* rs1, char* rd, short* imm)
+void I_Type(unsigned int cmd, char* funct3, char* rs1, char* rd, short* imm)
 {
     *funct3 = get_funct3(cmd);
     *rs1 = get_rs1(cmd);
@@ -23,7 +23,7 @@ void I_Type(int cmd, char* funct3, char* rs1, char* rd, short* imm)
     }
 }
 
-void S_Type(int cmd, char* funct3, char* rs1, char* rs2, short* imm)
+void S_Type(unsigned int cmd, char* funct3, char* rs1, char* rs2, short* imm)
 {
     *funct3 = get_funct3(cmd);
     *rs1 = get_rs1(cmd);
@@ -37,7 +37,7 @@ void S_Type(int cmd, char* funct3, char* rs1, char* rs2, short* imm)
     *imm |= (cmd >> 7) & get_n(5);
 }
 
-void B_Type(int cmd, char* funct3, char* rs1, short* imm, char* rs2)
+void B_Type(unsigned int cmd, char* funct3, char* rs1, short* imm, char* rs2)
 {
     *funct3 = (cmd >> 12) & get_n(3);
     *rs1 = get_rs1(cmd);
@@ -52,7 +52,7 @@ void B_Type(int cmd, char* funct3, char* rs1, short* imm, char* rs2)
     *rs2 = get_rs2(cmd);
 }
 
-void U_Type(int cmd, char* rd, int* imm)
+void U_Type(unsigned int cmd, char* rd, int* imm)
 {
     *rd = get_rd(cmd);
     *imm = (cmd >> 12) & get_n(20);

@@ -1,17 +1,14 @@
 #include "../headers/cpu.h"
 #include "../headers/str.h"
 
-char* instruction[32];
+char instruction[60];
 
 void UnimplementedInstruction(int cmd, State* state)
 {
     printf("Error. Unrecognized instruction in %d.\nInstruction encoding: %x.\n", state->pc, cmd);
 }
 
-void EmulateInstruction(State* state){
-    CheckOperation(state, X, state->pc, 1);
-    //Break(state, state->pc);
-    unsigned int cmd = *(unsigned int*)(state->memory + state->pc);
+void EmulateInstruction(State* state, unsigned int cmd){
     //printf("ip=%x\n", cmd);
     CheckBreapoints(state);
     char opcode = cmd & get_n(7);
@@ -72,6 +69,7 @@ void EmulateInstruction(State* state){
         M_Catch(state, 2, 1);
     state->pc += 4;
     state->general_purpose[zero] = 0;
+    //printf("%s\n", instruction);
 }
 
 void PrintState(State* state) {
@@ -87,13 +85,17 @@ void PrintState(State* state) {
     printf("\n");
 }
 
-
 int EmulateRiscV(State* state)
 {
     PrintState(state);
+    InitAddOn(state);
     for (int i = 0; i < state->memory_size /4 ; i++)
     {
-        EmulateInstruction(state);
+        AddOn(state);
+        CheckOperation(state, X, state->pc, 1);
+        //Break(state, state->pc);
+        unsigned int cmd = *(unsigned int*)(state->memory + state->pc);
+        EmulateInstruction(state, cmd);
         //PrintState(state);
     }
 }

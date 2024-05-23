@@ -35,11 +35,23 @@ void MakeStateMemory1(State* s) {
     free(string);
 }
 
-int main()
+int main(int argc, char** argv)
 {
+    char* filename = "./program/a.out";
+    char* dllname = "./c_src/tools/null.so";
+    if (argc > 1)
+    {
+        filename = argv[1];
+    }
+    if (argc > 2)
+    {
+        dllname = argv[2];
+    }
     State* s = MakeState1();
-    Load(s, "./program/a.out");
+    void* ptr = Load(s, filename, dllname);
     Break(s, s->pc);
     EmulateRiscV(s);
     free(s);
+    dlclose(ptr);
+    return 1;
 }

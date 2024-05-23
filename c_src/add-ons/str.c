@@ -16,7 +16,7 @@ int max(int a, int b)
     return b;
 }
 
-int strlen(char* str)
+unsigned int strlen1(char* str)
 {
     int i = 0;
     while (str[i] != '\0')
@@ -30,13 +30,13 @@ char strcmp1(char* st1, char* st2)
 {
     int i = 0;
 
-    if (strlen(st1) != strlen(st2))
+    if (strlen1(st1) != strlen1(st2))
         return 0;
-    while (i < strlen(st1) && st1[i] == st2[i])
+    while (i < strlen1(st1) && st1[i] == st2[i])
     {
         i++;
     }
-    return i == strlen(st1);
+    return i == strlen1(st1);
 }
 
 unsigned char ConvertC(char c)
@@ -64,7 +64,7 @@ unsigned char ConvertSh(short c)
 
 void Convert(char* c, short* s)
 {
-    int len = strlen((char *)s) / 2;
+    int len = strlen1((char *)s) / 2;
     int i;
     for (i = 0; i < len / 4; i++)
     {
@@ -85,22 +85,22 @@ void Convert(char* c, short* s)
 char* Complete_Hex(int final_len, int num)
 {
     char* buffer = (char*)malloc(final_len);
-    char* st[8];
+    char st[8];
     sprintf(st, "%x", num);
-    strcpy(buffer, "0x");
-    int zero_length = final_len - strlen(st);
+    strcpy1(buffer, "0x");
+    int zero_length = final_len - strlen1(st);
     int i;
     for (i = 2; i < zero_length; i++)
     {
         buffer[i] = '0';
     }
-    strcpy(buffer + zero_length, st);
+    strcpy1(buffer + zero_length, st);
     return buffer;
 }
 
-int strcpy(char* dst, char* src)
+unsigned int strcpy1(char* dst, char* src)
 {
-    int i, len = strlen(src);
+    int i, len = strlen1(src);
     memcpy1(dst, src, len);
     dst[len] = 0x0;
     return len;

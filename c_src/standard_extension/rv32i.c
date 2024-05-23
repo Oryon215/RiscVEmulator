@@ -1,6 +1,4 @@
 #include "../../headers/cpu.h"
-#include "../../headers/types.h"
-#include "../../headers/str.h"
 
 char LUI(int cmd, State* s) // load upper immediate
 {
@@ -86,7 +84,7 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(opcode, "BEQ");
+        strcpy1(opcode, "BEQ");
         ret = 1;
         break;
     case 0b001: // BNE
@@ -94,7 +92,7 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(opcode, "BNE");
+        strcpy1(opcode, "BNE");
         ret = 1;
         break;
     case 0b100: // BLT
@@ -102,7 +100,7 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(opcode, "BLT");
+        strcpy1(opcode, "BLT");
         ret = 1;
         break;
     case 0b101: // BGE
@@ -110,7 +108,7 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(opcode, "BGE");
+        strcpy1(opcode, "BGE");
         ret = 1;
         break;
     case 0b110: // BLTU
@@ -121,7 +119,7 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(opcode, "BLTU");
+        strcpy1(opcode, "BLTU");
         ret = 1;
         break;
     }
@@ -133,7 +131,7 @@ char CJUMPS(int cmd, State* s) //conditional jumps
             s->pc += imm;
             s->pc -= 4;
         }
-        strcpy(opcode, "BGEU");
+        strcpy1(opcode, "BGEU");
         ret = 1;
         break;
     }
@@ -154,18 +152,18 @@ char STORE(int cmd, State* s) // store in memory
     switch (funct3)
     {
     case 0b000: //SB
-        strcpy(opcode, "SB");
+        strcpy1(opcode, "SB");
         s->memory[address] = s->general_purpose[rs2];
         ret = 1;
         break;
     case 0b001: ;//SH
-        strcpy(opcode, "SH");
+        strcpy1(opcode, "SH");
         short* ptr1 = (short*)(s->memory + address);
         ptr1 = s->general_purpose[rs2];
         ret = 1;
         break;
     case 0b010: ;//SW
-        strcpy(opcode, "SW");
+        strcpy1(opcode, "SW");
         int* ptr2 = (int*)(s->memory + address);
         *ptr2 = s->general_purpose[rs2];
         ret = 1;
@@ -186,7 +184,7 @@ char LOAD(int cmd, State* s) // load from memory
     CheckOperation(s, R, address, 1);
     switch (funct3) {
         case 0b000: // LB
-            strcpy(opcode, "LB");
+            strcpy1(opcode, "LB");
             s->general_purpose[rd] = s->memory[address];
             if ((s->memory[address] >> 7) & 1)
             {
@@ -195,7 +193,7 @@ char LOAD(int cmd, State* s) // load from memory
             ret = 1;
             break;
         case 0b001: // LH
-            strcpy(opcode, "LH");
+            strcpy1(opcode, "LH");
             short* ptr1 = s->memory + address;
             s->general_purpose[rd] = *ptr1;
             if ((*ptr1 >> 15) & 1)
@@ -205,18 +203,18 @@ char LOAD(int cmd, State* s) // load from memory
             ret = 1;
             break;
         case 0b010: // LW
-            strcpy(opcode, "LW");
+            strcpy1(opcode, "LW");
             int* ptr2 = s->memory + address;
             s->general_purpose[rd] = *ptr2;
             ret = 1;
             break;
         case 0b100: // LBU
-            strcpy(opcode, "LBU");
+            strcpy1(opcode, "LBU");
             s->general_purpose[rd] = s->memory[address];
             ret = 1;
             break;
         case 0b101: // LHU
-            strcpy(opcode, "LHU");
+            strcpy1(opcode, "LHU");
             short* ptr3 = s->memory + address;
             s->general_purpose[rd] = *ptr3;
             ret = 1;
@@ -238,34 +236,34 @@ char ALU(int cmd, State* s) // arithmetic and logical operations
         switch (funct7)
         {
         case 0b0000000: // ADD
-            strcpy(opcode, "ADD");
+            strcpy1(opcode, "ADD");
             s->general_purpose[rd] = s->general_purpose[rs1] + s->general_purpose[rs2];
             ret = 1;
             break;
         case 0b0100000: // SUB
-            strcpy(opcode, "SUB");
+            strcpy1(opcode, "SUB");
             s->general_purpose[rd] = s->general_purpose[rs1] - s->general_purpose[rs2];
             ret = 1;
             break;
         }
         break;
     case 0b001: // SLL
-        strcpy(opcode, "SLL");
+        strcpy1(opcode, "SLL");
         s->general_purpose[rd] = (s->general_purpose[rs1] << s->general_purpose[rs2]);
         ret = 1;
         break;
     case 0b010: // SLT
-        strcpy(opcode, "SLT");
+        strcpy1(opcode, "SLT");
         s->general_purpose[rd] = s->general_purpose[rs1] < s->general_purpose[rs2];
         ret = 1;
         break;
     case 0b011: //SLTU
-        strcpy(opcode, "SLTU");
+        strcpy1(opcode, "SLTU");
         s->general_purpose[rd] = (unsigned)s->general_purpose[rs1] < (unsigned)s->general_purpose[rs2];
         ret = 1;
         break;
     case 0b100: // XOR
-        strcpy(opcode, "XOR");
+        strcpy1(opcode, "XOR");
         s->general_purpose[rd] = s->general_purpose[rs1] ^ s->general_purpose[rs2];
         ret = 1;
         break;
@@ -273,13 +271,17 @@ char ALU(int cmd, State* s) // arithmetic and logical operations
         switch (funct7)
         {
         case 0b0000000: //SRL
-            strcpy(opcode, "SRL");
+            strcpy1(opcode, "SRL");
             s->general_purpose[rd] = (s->general_purpose[rs1] >> s->general_purpose[rs2]);
             ret = 1;
             break;
         case 0b0100000: ;//SRA
-            strcpy(opcode, "SRA");
-            int sign = (rs1 < 0) << 31;
+            strcpy1(opcode, "SRA");
+            int sign = 0;
+            if (s->general_purpose[rs1] < 0)
+            {
+                sign = get_n(s->general_purpose[rs2]) << (32 - s->general_purpose[rs2]);
+            }
             s->general_purpose[rd] = (s->general_purpose[rs1] >> s->general_purpose[rs2]) | sign;
             ret = 1;
             break;
@@ -287,12 +289,12 @@ char ALU(int cmd, State* s) // arithmetic and logical operations
         }
         break;
     case 0b110: //OR
-        strcpy(opcode, "OR");
+        strcpy1(opcode, "OR");
         s->general_purpose[rd] = s->general_purpose[rs1] | s->general_purpose[rs2];
         ret = 1;
         break;
     case 0b111: //AND
-        strcpy(opcode, "AND");
+        strcpy1(opcode, "AND");
         s->general_purpose[rd] = s->general_purpose[rs1] & s->general_purpose[rs2];
         ret = 1;
         break;
@@ -313,39 +315,39 @@ char ALUI(int cmd, State* s) // immediate arithmetic and logical operations
     switch (funct3)
     {
     case 0b000: //ADDI
-        strcpy(opcode, "ADDI");
+        strcpy1(opcode, "ADDI");
         s->general_purpose[rd] = s->general_purpose[rs1] + imm;
         ret = 1;
         break;
     case 0b010: //SLTI
-        strcpy(opcode, "SLTI");
+        strcpy1(opcode, "SLTI");
         s->general_purpose[rd] = s->general_purpose[rs1] < imm;
         ret = 1;
         break;
     case 0b011: //SLTIU
-        strcpy(opcode, "SLTIU");
+        strcpy1(opcode, "SLTIU");
         s->general_purpose[rd] = (unsigned)s->general_purpose[rs1] < (unsigned)imm;
         ret = 1;
         break;
     case 0b100: //XORI
-        strcpy(opcode, "XORI");
+        strcpy1(opcode, "XORI");
         s->general_purpose[rd] = s->general_purpose[rs1] ^ imm;
         ret = 1;
         break;
 
     case 0b110: //ORI
-        strcpy(opcode, "ORI");
+        strcpy1(opcode, "ORI");
         s->general_purpose[rd] = s->general_purpose[rs1] | imm;
         ret = 1;
         break;
     case 0b111: //ANDI
-        strcpy(opcode, "ANDI");
+        strcpy1(opcode, "ANDI");
         s->general_purpose[rd] = s->general_purpose[rs1] & imm;
         ret = 1;
         break;
     case 0b001: //SLLI
         imm = shamt;
-        strcpy(opcode, "SLLI");
+        strcpy1(opcode, "SLLI");
         s->general_purpose[rd] = (s->general_purpose[rs1] << shamt);
         ret = 1;
         break;
@@ -354,13 +356,17 @@ char ALUI(int cmd, State* s) // immediate arithmetic and logical operations
         switch (funct7)
         {
         case 0b0000000: ;//SRLI
-            strcpy(opcode, "SRLI");
+            strcpy1(opcode, "SRLI");
             s->general_purpose[rd] = (s->general_purpose[rs1] >> shamt);
             ret = 1;
             break;
         case 0b0100000: ;//SRAI
-            strcpy(opcode, "SRAI");
-            int sign = (rs1 < 0) << 31;
+            strcpy1(opcode, "SRAI");
+            int sign = 0;
+            if (s->general_purpose[rs1] < 0)
+            {
+                sign = get_n(shamt) << (32 - shamt);
+            }
             s->general_purpose[rd] = (s->general_purpose[rs1] >> shamt) | sign;
             ret = 1;
             break;

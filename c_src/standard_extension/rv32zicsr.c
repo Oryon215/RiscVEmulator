@@ -1,6 +1,4 @@
 #include "../../headers/cpu.h"
-#include "../../headers/types.h"
-#include "../../headers/str.h"
 
 char ZICSR(int cmd, State* s)
 {
@@ -16,38 +14,38 @@ char ZICSR(int cmd, State* s)
         s->general_purpose[rd] = s->csr[imm];
         s->csr[imm] = s->general_purpose[rs1];
         ret = 1;
-        strcpy(opcode, "CSRRW");
+        strcpy1(opcode, "CSRRW");
         break;
     case 010: //CSRRS
         s->general_purpose[rd] = s->csr[imm];
         s->csr[imm] |= s->csr[rs1];
         ret = 1;
-        strcpy(opcode, "CSRRS");
+        strcpy1(opcode, "CSRRS");
         break;
     case 011: //CSRRC
         s->general_purpose[rd] = s->csr[imm];
         s->csr[imm] ^= s->csr[rs1];
         ret = 1;
-        strcpy(opcode, "CSRRS");
+        strcpy1(opcode, "CSRRS");
         break;
     case 101: //CSRRWI
         s->general_purpose[rd] = s->csr[imm];
         s->csr[imm] ^= s->csr[imm];
         s->csr[imm] |= (unsigned)rs1;
         ret = 1;
-        strcpy(opcode, "CSRRWI");
+        strcpy1(opcode, "CSRRWI");
         break;
     case 110: //CSRRSI
         s->general_purpose[rd] = s->csr[imm];
         s->csr[imm] |= (unsigned)rs1;
         ret = 1;
-        strcpy(opcode, "CSRRSI");
+        strcpy1(opcode, "CSRRSI");
         break;
     case 111: //CSRRCI
         s->general_purpose[rd] = s->csr[imm];
         s->csr[imm] ^= (unsigned)rs1;
         ret = 1;
-        strcpy(opcode, "CSRRCI");
+        strcpy1(opcode, "CSRRCI");
         break;
     }
     sprintf(instruction, "%s %d, %d, csr - %d", opcode, rd, rs1, imm);

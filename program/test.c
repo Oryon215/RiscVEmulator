@@ -1,8 +1,12 @@
 #include <stdio.h>
 
+int A(void foo)
+{
+	return 1;
+}
+
 int main()
 {
-	int a = -1548 & 15;
-	printf("%d\n", a);
-	return 0;
+	int x = 0;
+	return A(x);
 }

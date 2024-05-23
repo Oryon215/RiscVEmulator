@@ -1,6 +1,7 @@
 
 #include "../../headers/cpu.h"
 //all syscall includes
+#include <syscall.h>
 #include <sys/stat.h>
 #include <sys/sysinfo.h>
 #include <linux/futex.h>
@@ -63,24 +64,24 @@ long sys_ni_syscall(void)
     return -ENOSYS;
 }
 
-void Syscall_Table(State* s)
-{
-    switch(s->general_purpose[a7])
+void Syscall_Table(State* s){
+    printf("Syscall executed. Syscall number:%d\n", s->general_purpose[a7]);
+   switch(s->general_purpose[a7])
         {
         case 0:
-            s->general_purpose[a7] = syscall(SYS_io_setup, (aio_context_t)s->general_purpose[a1]);
+            s->general_purpose[a7] = syscall(SYS_io_setup, (aio_context_t)s->general_purpose[a0]);
             break;
         case 1:
-            s->general_purpose[a7] = syscall(SYS_io_destroy, (aio_context_t)s->general_purpose[a1]);
+            s->general_purpose[a7] = syscall(SYS_io_destroy, (aio_context_t)s->general_purpose[a0]);
             break;
         case 2:
-            s->general_purpose[a7] = syscall(SYS_io_submit, (aio_context_t)s->general_purpose[a1]);
+            s->general_purpose[a7] = syscall(SYS_io_submit, (aio_context_t)s->general_purpose[a0]);
             break;
         case 3:
-            s->general_purpose[a7] = syscall(SYS_io_cancel, (aio_context_t)s->general_purpose[a1]);
+            s->general_purpose[a7] = syscall(SYS_io_cancel, (aio_context_t)s->general_purpose[a0]);
             break;
         case 4:
-            s->general_purpose[a7] = syscall(SYS_io_getevents, (aio_context_t)s->general_purpose[a1]);
+            s->general_purpose[a7] = syscall(SYS_io_getevents, (aio_context_t)s->general_purpose[a0]);
             break;
         case 5:
             s->general_purpose[a7] = setxattr((const char*)&s->memory[s->general_purpose[a0]], (const char*)&s->memory[s->general_purpose[a1]], (const void*)&s->memory[s->general_purpose[a2]], (size_t)s->general_purpose[a3], (int)s->general_purpose[a4]);
@@ -119,7 +120,8 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = fremovexattr((int)s->general_purpose[a0], (const char*)&s->memory[s->general_purpose[a1]]);
             break;
         case 17:
-            s->general_purpose[a7] = getcwd((char)s->general_purpose[a0], (size_t)s->general_purpose[a1]);
+            char* st = getcwd((char*)s->general_purpose[a0], (size_t)s->general_purpose[a1]);
+            s->general_purpose[a7] = (int)AddMemory(s, st);
             break;
         case 18:
             s->general_purpose[a7] = syscall(SYS_lookup_dcookie, (uint64_t)s->general_purpose[a0], (char*)&s->memory[s->general_purpose[a1]]);
@@ -236,10 +238,10 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = fchown((unsigned int)s->general_purpose[a0], (uid_t)s->general_purpose[a1], (gid_t)s->general_purpose[a2]);
             break;
         case 56:
-            s->general_purpose[a7] = openat((int)s->general_purpose[a0], (const char*)&s->memory[s->general_purpose[a1], (int)s->general_purpose[a2]);
+            s->general_purpose[a7] = openat((int)s->general_purpose[a0], (const char*)&s->memory[s->general_purpose[a1]], (int)s->general_purpose[a2]);
             break;
         case 57:
-            s->general_purpose[a7] = close((int)s->general_purpose[a0]);
+            //s->general_purpose[a7] = close((int)s->general_purpose[a0]);
             break;
         case 58:
             s->general_purpose[a7] = vhangup();
@@ -284,10 +286,12 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = sendfile64((int)s->general_purpose[a0], (int)s->general_purpose[a1], (loff_t*)&s->memory[s->general_purpose[a2]], (size_t)s->general_purpose[a3]);
             break;
         case 72:
-            // not implemented
+            // pselect6_time32 not implemented
+            sys_ni_syscall();
             break;
         case 73:
-            // not implemented
+            // ppoll_time32 not implemented
+            sys_ni_syscall();
             break;
         case 74:
             s->general_purpose[a7] = signalfd((int)s->general_purpose[a0], (const sigset_t*)s->general_purpose[a1], (int)s->general_purpose[a2]);
@@ -305,10 +309,10 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = readlinkat((int)s->general_purpose[a0], (const char*)&s->memory[s->general_purpose[a1]], (char*)&s->memory[s->general_purpose[a2]], (int)s->general_purpose[a3]);
             break;
         case 79:
-            s->general_purpose[a7] = fstatat((int)s->general_purpose[a0], (const char*)&s->memory[s->general_purpose[a1], (struct stat *restrict)&s->memory[s->general_purpose[a2]], (int)s->general_purpose[a3]);
+            s->general_purpose[a7] = fstatat((int)s->general_purpose[a0], (const char*)&s->memory[s->general_purpose[a1]], (struct stat *restrict)&s->memory[s->general_purpose[a2]], (int)s->general_purpose[a3]);
             break;
         case 80:
-            s->general_purpose[a7] = fstat((int)s->general_purpose[a0], (struct stat*)&s->memory[s->general_purpose[a0]);
+            s->general_purpose[a7] = fstat((int)s->general_purpose[a0], (struct stat*)&s->memory[s->general_purpose[a1]]);
             break;
         case 81:
             sync();
@@ -349,15 +353,14 @@ void Syscall_Table(State* s)
         case 93:
             printf("Program status: finished.");
             exit((int)s->general_purpose[a0]);
-            break;
         case 94:
-            //exit_group undefined
+            s->general_purpose[a7] = syscall(SYS_exit_group, (int)s->general_purpose[a0]);
             break;
         case 95:
             s->general_purpose[a7] = waitid((int)s->general_purpose[a0], (pid_t)s->general_purpose[a1], (struct siginfo*)&s->memory[s->general_purpose[a2]], (int)s->general_purpose[a3]);
             break;
         case 96:
-            //set_tid_address undefined
+            s->general_purpose[a7] = syscall(SYS_set_tid_address, (int*)&s->memory[s->general_purpose[a0]]);
             break;
         case 97:
             s->general_purpose[a7] = unshare((unsigned long)s->general_purpose[a0]);
@@ -366,13 +369,15 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = syscall(SYS_futex, (uint32_t*)&s->memory[s->general_purpose[a0]], (int)s->general_purpose[a1], (uint32_t)s->general_purpose[a2], (uint32_t*)&s->memory[s->general_purpose[a2]], (uint32_t*)&s->memory[s->general_purpose[a3]], (uint32_t)s->memory[s->general_purpose[a4]]);
             break;
         case 99:
-            s->general_purpose[a7] = set_robust_list((struct robust_list_head*)&s->memory[s->general_purpose[a0]], (size_t)s->general_purpose[a1]);
+            //set_robust_list undefined
+			sys_ni_syscall();
             break;
         case 100:
-            int memory_index = *(int*)(s->memory + s->general_purpose[a1]);
-            void** ptr = &&s->memory[memory_index];
-            s->general_purpose[a7] = get_robust_list((int)s->general_purpose[a0], (struct robust_list_head**)ptr, (size_t*)&s->memory[s->general_purpose[a2]])
+        {
+            //get_robust_list undefined
+			sys_ni_syscall();
             break;
+        }
         case 101:
             s->general_purpose[a7] = nanosleep((struct __kernel_timespec*)&s->memory[s->general_purpose[a0]], (struct __kernel_timespec*)&s->memory[s->general_purpose[a1]]);
             break;
@@ -386,25 +391,29 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = syscall(SYS_kexec_load, (unsigned long)s->general_purpose[a0], (unsigned long)s->general_purpose[a1], (struct kexec_segment*)&s->memory[s->general_purpose[a1]], (unsigned long)s->general_purpose[a2]);
             break;
         case 105:
-            s->general_purpose[a7] = syscall(SYS_init_module, (void)s->general_purpose[a1], (unsigned long)s->general_purpose[a2], (const char*)&s->memory[s->general_purpose[a3]]);
+            s->general_purpose[a7] = syscall(SYS_init_module, (void*)s->general_purpose[a1], (unsigned long)s->general_purpose[a2], (const char*)&s->memory[s->general_purpose[a3]]);
             break;
         case 106:
             s->general_purpose[a7] = delete_module((const char*)&s->memory[s->general_purpose[a0]], (unsigned int)s->general_purpose[a1]);
             break;
         case 107:
-            s->general_purpose[a7] = timer_create((clockid_t)s->general_purpose[a0], (struct sigevent *_Nullable restrict)&s->memory[s->general_purpose[a1]], (timer_t restrict*)&s->memory[s->general_purpose[a2]]);
+            s->general_purpose[a7] = timer_create((clockid_t)s->general_purpose[a0], (struct sigevent* restrict)&s->memory[s->general_purpose[a1]], (timer_t restrict*)&s->memory[s->general_purpose[a2]]);
             break;
         case 408:
             //timer_gettime undefined
+			sys_ni_syscall();
             break;
         case 109:
             //timer_getoverrun undefined
+			sys_ni_syscall();
             break;
         case 409:
             //timer_settime undefined
+			sys_ni_syscall();
             break;
         case 111:
             //timer_delete undefined
+			sys_ni_syscall();
             break;
         case 404:
             s->general_purpose[a7] = clock_settime((clockid_t)s->general_purpose[a0], (const struct __kernel_timespec*)&s->memory[s->general_purpose[a1]]);
@@ -455,37 +464,45 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = sched_rr_get_interval((pid_t)s->general_purpose[a0], (struct __kernel_timespec*)&s->memory[s->general_purpose[a1]]);
             break;
         case 128:
-            //restart_syscall undefined
+            //restart_Syscall_undefined
+			sys_ni_syscall();
+            sys_ni_syscall();
             break;
         case 129:
-            //kill undefined
+            s->general_purpose[a7] = kill((pid_t)s->general_purpose[a0], (int)s->general_purpose[a1]);
             break;
         case 130:
-            //tkill undefined
+            s->general_purpose[a7] = syscall(SYS_tkill, (pid_t)s->general_purpose[a0], (int)s->general_purpose[a1]);
             break;
         case 131:
             s->general_purpose[a7] = tgkill((pid_t)s->general_purpose[a0], (pid_t)s->general_purpose[a1], (int)s->general_purpose[a2]);
             break;
         case 132:
-            s->general_purpose[a7] = sigaltstack((const struct sigaltstack*)&s->memory[s->general_purpose[a0]], (struct sigaltstack*)&s->memory[s->general_purpose[a1]]);
+            //sigaltstack undefined
+            sys_ni_syscall();
             break;
         case 133:
-            //rt_sigsuspend undefined
+            s->general_purpose[a7] = sigsuspend((const sigset_t*)s->general_purpose[a0]);
             break;
         case 134:
             //rt_sigaction undefined
+			sys_ni_syscall();
             break;
         case 135:
             //rt_sigprocmask undefined
+			sys_ni_syscall();
             break;
         case 136:
             //rt_sigpending undefined
+			sys_ni_syscall();
             break;
         case 137:
             //rt_sigtimedwait_time32 undefined
+			sys_ni_syscall();
             break;
         case 138:
             //rt_sigqueueinfo undefined
+			sys_ni_syscall();
             break;
         case 140:
             s->general_purpose[a7] = setpriority((int)s->general_purpose[a0], (int)s->general_purpose[a1], (int)s->general_purpose[a2]);
@@ -549,6 +566,7 @@ void Syscall_Table(State* s)
             break;
         case 160:
             //newuname undefined
+			sys_ni_syscall();
             break;
         case 161:
             s->general_purpose[a7] = sethostname((char*)&s->memory[s->general_purpose[a0]], (int)s->general_purpose[a1]);
@@ -609,27 +627,34 @@ void Syscall_Table(State* s)
             break;
         case 180:
             //mq_open undefined
+			sys_ni_syscall();
             break;
         case 181:
             //mq_unlink undefined
+			sys_ni_syscall();
             break;
         case 418:
             //mq_timedsend undefined
+			sys_ni_syscall();
             break;
         case 419:
             //mq_timedreceive undefined
+			sys_ni_syscall();
             break;
         case 184:
             //mq_notify undefined
+			sys_ni_syscall();
             break;
         case 185:
             //mq_getsetattr undefined
+			sys_ni_syscall();
             break;
         case 186:
             s->general_purpose[a7] = msgget((key_t)s->general_purpose[a0], (int)s->general_purpose[a1]);
             break;
         case 187:
             //old_msgctl undefined
+			sys_ni_syscall();
             break;
         case 188:
             s->general_purpose[a7] = msgrcv((int)s->general_purpose[a0], (struct msgbuf*)&s->memory[s->general_purpose[a1]], (size_t)s->general_purpose[a2], (long)s->general_purpose[a3], (int)s->general_purpose[a4]);
@@ -650,10 +675,12 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = semop((int)s->general_purpose[a0], (struct sembuf*)&s->memory[s->general_purpose[a1]], (unsigned)s->general_purpose[a2]);
             break;
         case 194:
-            s->general_purpose[a7] = shmget((key_t)s->general_purpose[a0], (size_t)s->general_purpose[a1], (int)s->general_purpose[a2]);
+            //shmget undefined
+            sys_ni_syscall();
             break;
         case 195:
             //old_shmctl undefined
+			sys_ni_syscall();
             break;
         case 196:
             s->general_purpose[a7] = shmat((int)s->general_purpose[a0], (char*)&s->memory[s->general_purpose[a1]], (int)s->general_purpose[a2]);
@@ -669,6 +696,7 @@ void Syscall_Table(State* s)
             break;
         case 200:
             //bind undefined
+			sys_ni_syscall();
             break;
         case 201:
             s->general_purpose[a7] = listen((int)s->general_purpose[a0], (int)s->general_purpose[a1]);
@@ -710,34 +738,41 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = readahead((int)s->general_purpose[a0], (loff_t)s->general_purpose[a1], (size_t)s->general_purpose[a2]);
             break;
         case 214:
-            s->general_purpose[a7] = brk((unsigned long)s->general_purpose[a0]);
+            s->general_purpose[a7] = BRK(s, (unsigned int)s->general_purpose[a0]);
             break;
         case 215:
-            s->general_purpose[a7] = munmap((unsigned long)s->general_purpose[a0], (size_t)s->general_purpose[a1]);
+            s->general_purpose[a7] = MUNMAP(s, (unsigned int)s->general_purpose[a0], (size_t)s->general_purpose[a1]);
             break;
         case 216:
-            s->general_purpose[a7] = mremap((unsigned long)s->general_purpose[a0], (unsigned long)s->general_purpose[a1], (unsigned long)s->general_purpose[a2], (unsigned long)s->general_purpose[a3], (unsigned long)s->general_purpose[a4]);
+            //mremap undefined
+            sys_ni_syscall();
             break;
         case 217:
             //add_key undefined
+			sys_ni_syscall();
             break;
         case 218:
             //request_key undefined
+			sys_ni_syscall();
             break;
         case 219:
             //keyctl undefined
+			sys_ni_syscall();
             break;
         case 220:
             //clone undefined
+			sys_ni_syscall();
             break;
         case 221:
             //execve undefined
+			sys_ni_syscall();
             break;
         case 222:
-            //old_mmap undefined
+			s->general_purpose[a7] = MMAP(s, (void*)&s->memory[s->general_purpose[a0]], (size_t)s->general_purpose[a1], (int)s->general_purpose[a2], (int)s->general_purpose[a3], (int)s->general_purpose[a4], (off_t)s->general_purpose[a5]);
             break;
         case 223:
             //fadvise64_64 undefined
+			sys_ni_syscall();
             break;
         case 224:
             s->general_purpose[a7] = swapon((const char*)&s->memory[s->general_purpose[a0]], (int)s->general_purpose[a1]);
@@ -746,58 +781,74 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = swapoff((const char*)&s->memory[s->general_purpose[a0]]);
             break;
         case 226:
-            s->general_purpose[a7] = mprotect((unsigned long)s->general_purpose[a0], (size_t)s->general_purpose[a1], (unsigned long)s->general_purpose[a2]);
+            //mprotect undefined
+            sys_ni_syscall();
             break;
         case 227:
-            s->general_purpose[a7] = msync((unsigned long)s->general_purpose[a0], (size_t)s->general_purpose[a1], (int)s->general_purpose[a2]);
+            //msync undefined
+            sys_ni_syscall();
             break;
         case 228:
-            s->general_purpose[a7] = mlock((unsigned long)s->general_purpose[a0], (size_t)s->general_purpose[a1]);
+            //mlock undefined
+            sys_ni_syscall();
             break;
         case 229:
-            s->general_purpose[a7] = munlock((unsigned long)s->general_purpose[a0], (size_t)s->general_purpose[a1]);
+            //munlock undefined
+            sys_ni_syscall();
             break;
         case 230:
-            s->general_purpose[a7] = mlockall((int)s->general_purpose[a0]);
+            //mlockall undefined
+            sys_ni_syscall();
             break;
         case 231:
-            s->general_purpose[a7] = munlockall();
+            //munlockall undefined
+            sys_ni_syscall();
             break;
         case 232:
-            s->general_purpose[a7] = mincore((unsigned long)s->general_purpose[a0], (size_t)s->general_purpose[a1], (unsigned char*)&s->memory[s->general_purpose[a2]]);
+            //mincore undefined
+            sys_ni_syscall();
             break;
         case 233:
             //madvise undefined
+			sys_ni_syscall();
             break;
         case 234:
-            s->general_purpose[a7] = remap_file_pages((unsigned long)s->general_purpose[a0], (unsigned long)s->general_purpose[a1], (unsigned long)s->general_purpose[a2], (unsigned long)s->general_purpose[a3], (unsigned long)s->general_purpose[a4]);
+            //remapfilepages undefined
             break;
         case 235:
             //mbind undefined
+			sys_ni_syscall();
             break;
         case 236:
             //get_mempolicy undefined
+			sys_ni_syscall();
             break;
         case 237:
             //set_mempolicy undefined
+			sys_ni_syscall();
             break;
         case 238:
             //migrate_pages undefined
+			sys_ni_syscall();
             break;
         case 239:
             //move_pages undefined
+			sys_ni_syscall();
             break;
         case 240:
             //rt_tgsigqueueinfo undefined
+			sys_ni_syscall();
             break;
         case 241:
             //perf_event_open undefined
+			sys_ni_syscall();
             break;
         case 242:
             s->general_purpose[a7] = accept4((int)s->general_purpose[a0], (struct sockaddr*)&s->memory[s->general_purpose[a1]], (int*)&s->memory[s->general_purpose[a2]], (int)s->general_purpose[a3]);
             break;
         case 243:
             //recvmmsg_time32 undefined
+			sys_ni_syscall();
             break;
         case 260:
             s->general_purpose[a7] = wait4((pid_t)s->general_purpose[a0], (int*)&s->memory[s->general_purpose[a1]], (int)s->general_purpose[a2], (struct rusage*)&s->memory[s->general_purpose[a3]]);
@@ -837,21 +888,26 @@ void Syscall_Table(State* s)
             break;
         case 272:
             //kcmp undefined
+			sys_ni_syscall();
             break;
         case 273:
             //finit_module undefined
+			sys_ni_syscall();
             break;
         case 274:
             //sched_setattr undefined
+			sys_ni_syscall();
             break;
         case 275:
             //sched_getattr undefined
+			sys_ni_syscall();
             break;
         case 276:
             s->general_purpose[a7] = renameat2((int)s->general_purpose[a0], (const char*)&s->memory[s->general_purpose[a1]], (int)s->general_purpose[a2], (const char*)&s->memory[s->general_purpose[a3]], (unsigned int)s->general_purpose[a4]);
             break;
         case 277:
             //seccomp undefined
+			sys_ni_syscall();
             break;
         case 278:
             s->general_purpose[a7] = getrandom((char*)&s->memory[s->general_purpose[a0]], (size_t)s->general_purpose[a1], (unsigned int)s->general_purpose[a2]);
@@ -861,18 +917,23 @@ void Syscall_Table(State* s)
             break;
         case 280:
             //bpf undefined
+			sys_ni_syscall();
             break;
         case 281:
             //execveat undefined
+			sys_ni_syscall();
             break;
         case 282:
             //userfaultfd undefined
+			sys_ni_syscall();
             break;
         case 283:
             //membarrier undefined
+			sys_ni_syscall();
             break;
         case 284:
-            s->general_purpose[a7] = mlock2((unsigned long)s->general_purpose[a0], (size_t)s->general_purpose[a1], (int)s->general_purpose[a2]);
+            //mlock2 undefined
+            sys_ni_syscall();
             break;
         case 285:
             s->general_purpose[a7] = copy_file_range((int)s->general_purpose[a0], (loff_t*)&s->memory[s->general_purpose[a1]], (int)s->general_purpose[a2], (loff_t*)&s->memory[s->general_purpose[a3]], (size_t)s->general_purpose[a4], (unsigned int)s->general_purpose[a5]);
@@ -884,78 +945,102 @@ void Syscall_Table(State* s)
             s->general_purpose[a7] = pwritev2((unsigned long)s->general_purpose[a0], (const struct iovec*)&s->memory[s->general_purpose[a1]], (unsigned long)s->general_purpose[a2], (unsigned long)s->general_purpose[a3], (unsigned long)s->general_purpose[a4]);
             break;
         case 288:
-            s->general_purpose[a7] = pkey_mprotect((unsigned long)s->general_purpose[a0], (size_t)s->general_purpose[a1], (unsigned long)s->general_purpose[a2], (int)s->general_purpose[a3]);
+            //pkey_mprotect undefined
+            sys_ni_syscall();
             break;
         case 289:
-            s->general_purpose[a7] = pkey_alloc((unsigned long)s->general_purpose[a0], (unsigned long)s->general_purpose[a1]);
+            //pkey_alloc undefined
+            sys_ni_syscall();
             break;
         case 290:
-            s->general_purpose[a7] = pkey_free((int)s->general_purpose[a0]);
+            //pkey_free undefined
             break;
         case 291:
             s->general_purpose[a7] = statx((int)s->general_purpose[a0], (const char*)&s->memory[s->general_purpose[a1]], (unsigned)s->general_purpose[a2], (unsigned)s->general_purpose[a3], (struct statx*)&s->memory[s->general_purpose[a4]]);
             break;
         case 416:
             //io_pgetevents undefined
+			sys_ni_syscall();
             break;
         case 293:
             //rseq undefined
+			sys_ni_syscall();
             break;
         case 294:
             //kexec_file_load undefined
+			sys_ni_syscall();
             break;
         case 424:
             //pidfd_send_signal undefined
+			sys_ni_syscall();
             break;
         case 425:
             //io_uring_setup undefined
+			sys_ni_syscall();
             break;
         case 426:
             //io_uring_enter undefined
+			sys_ni_syscall();
             break;
         case 427:
             //io_uring_register undefined
+			sys_ni_syscall();
             break;
         case 428:
             //open_tree undefined
+			sys_ni_syscall();
             break;
         case 429:
             //move_mount undefined
+			sys_ni_syscall();
             break;
         case 430:
             //fsopen undefined
+			sys_ni_syscall();
             break;
         case 431:
             //fsconfig undefined
+			sys_ni_syscall();
             break;
         case 432:
             //fsmount undefined
+			sys_ni_syscall();
             break;
         case 433:
             //fspick undefined
+			sys_ni_syscall();
             break;
         case 434:
             //pidfd_open undefined
+			sys_ni_syscall();
             break;
         case 435:
             //clone3 undefined
+			sys_ni_syscall();
             break;
         case 436:
             //close_range undefined
+			sys_ni_syscall();
             break;
         case 437:
             //openat2 undefined
+			sys_ni_syscall();
             break;
         case 438:
             //pidfd_getfd undefined
+			sys_ni_syscall();
             break;
         case 439:
             //faccessat2 undefined
+			sys_ni_syscall();
             break;
         case 440:
             //process_madvise undefined
+			sys_ni_syscall();
             break;
     }
 }
+
+
 
 
