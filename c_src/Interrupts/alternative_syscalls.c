@@ -1,8 +1,17 @@
 #include "../../headers/cpu.h"
 #include <sys/mman.h>
+/*
+Manage syscall hooks
+*/
+
 
 int FixFlags(int flags)
 {
+    /*
+    match flags in mmap function to flag conventions in ELF format
+    flags - mmap flag parameter
+    return: fixed flags
+    */
     int new_flags = 0;
     if (flags & 1)
     {
@@ -22,6 +31,12 @@ int FixFlags(int flags)
 
 void ReallocMemory(State* s, unsigned int new_size)
 {
+    /*
+    allocate new memory size to process
+    s - current state
+    new_size - new memory size
+    return: void
+    */
     char* new_memory = malloc(new_size);
     memcpy1(new_memory, s->memory, s->memory_size);
     free(s->memory);
@@ -32,6 +47,12 @@ void ReallocMemory(State* s, unsigned int new_size)
 
 void* AddMemory(State* s, char* st)
 {
+    /*
+    add memory to process memory
+    s - current state
+    st - new added memory
+    return: void ptr of new memory index
+    */
     ReallocMemory(s, s->memory_size + strlen(st));
     s->memory_segments[s->segment_count - 2].size += strlen(st);
     int index = s->memory_segments[s->segment_count - 2].addr + s->memory_segments[s->segment_count - 2].size - strlen(st);
@@ -41,6 +62,17 @@ void* AddMemory(State* s, char* st)
 
 void* MMAP(State* s,  unsigned int addr, size_t length, int protect, int flags, int filedes, off_t offset)
 {
+    /*
+    MMAP - memory map hook
+    s - the current state of the CPU
+    addr - the address where the mapping starts
+    length - the length of the mapping
+    protect - memory protection flags
+    flags - mapping flags
+    filedes - file descriptor
+    offset - offset in the file
+    return: pointer to the mapped area on success, (void*)-1 on failure
+    */
     if (flags & MAP_FIXED)
     {
         return (void*)-1; //only anonymous mapping is allowed currently.
@@ -64,6 +96,12 @@ void* MMAP(State* s,  unsigned int addr, size_t length, int protect, int flags, 
 }
 int BRK(State* s, unsigned int addr)
 {
+    /*
+    BRK - changes the end of the data segment to the specified address
+    s - the current state of the CPU
+    addr - the address to set as the end of the data segment
+    return: 0 on success, -1 on failure
+    */
     int stack_index = s->segment_count - 1;
     int difference = addr - s->memory_segments[stack_index].addr;
     if (difference < 0)
@@ -85,6 +123,13 @@ int BRK(State* s, unsigned int addr)
 
 int MUNMAP(State* s, unsigned int addr, size_t length)
 {
+    /*
+    MUNMAP - unmaps a mapped area of memory
+    s - the current state of the CPU
+    addr - the address to start unmapping
+    length - the length of the memory to unmap
+    return: 0 on success, -1 on failure
+    */
     size_t size = s->memory_size - length;
     char* tmp = malloc(size);
     if (!in_range(s->base_address, addr, s->memory_size + s->base_address))

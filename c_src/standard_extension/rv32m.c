@@ -1,7 +1,13 @@
 #include "../../headers/cpu.h"
 
-char MULDIV(int cmd, State* s)
+char MULDIV(CMD cmd, State* s)
 {
+    /*
+    Handle multiplication, division and modulo operations
+    cmd - current instruction
+    s - current program state
+    return: 1 on success
+    */
     char rs1, rd, rs2, funct3, funct7;
     R_Type(cmd, &rd, &funct3, &rs1, &rs2, &funct7);
     char ret = 0;

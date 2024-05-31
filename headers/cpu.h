@@ -12,40 +12,42 @@
 #include "types.h"
 
 #define MaxBreakpoints 10
+typedef unsigned int CMD;
+typedef unsigned int Address;
 
 extern char instruction[60];
 
 typedef struct Segment
 {
-    unsigned int addr;
-    unsigned int size;
-    unsigned char permissions;
-}Segment;
+    Address addr; // segment starting point
+    unsigned int size; // segment size
+    unsigned char permissions; // segment permissions
+}Segment; // Manage Program Memory Segments
 
 typedef struct State {
-    int general_purpose[32];
-    unsigned int pc;
-    unsigned char* memory;
-    unsigned int memory_size;
-    unsigned int base_address;
-    int csr[4096];
-    Segment* memory_segments;
-    unsigned int segment_count;
-    int* breakpoints[MaxBreakpoints];
-    int current_breakpoint;
-    char* symtab;
-    unsigned int symtab_size;
-    char* strtab;
-    unsigned int strtab_size;
+    int general_purpose[32]; // general purpose registers
+    Address pc; // program counter
+    unsigned char* memory; // program memory
+    unsigned int memory_size; // program memory size
+    Address base_address; // base address of program
+    int csr[4096]; // control and status registers
+    Segment* memory_segments; // memory segments of program
+    unsigned int segment_count; // number of memory segments of program
+    int* breakpoints[MaxBreakpoints]; // breakpoints
+    int current_breakpoint; // number of breakpoints currently
+    char* symtab; // symbol table
+    unsigned int symtab_size; // size of symbol table
+    char* strtab; // string table
+    unsigned int strtab_size; // size of string table
 } State;
 
 int ChangeBit(unsigned int num, int args, ...);
 
 int EmulateRiscV(State* state);
-void UnimplementedInstruction(int cmd, State* state);
+void UnimplementedInstruction(CMD cmd, State* state);
 void PrintState(State* state);
 // memory handling
-char CheckOperation(State* s, char operation, int addr, char exception);
+char CheckOperation(State* s, char operation, Address addr, char exception);
 #define R 2
 #define W 1
 #define X 0
@@ -128,22 +130,21 @@ char CheckOperation(State* s, char operation, int addr, char exception);
 
 //instruction functions
 //rv32i
-char LUI(int cmd, State* state);
-char AUIPC(int cmd, State* state);
-char JAL(int cmd, State* state);
-char JALR(int cmd, State* state);
-char CJUMPS(int cmd, State* state);
-char STORE(int cmd, State* state);
-char LOAD(int cmd, State* state);
-char ALU(int cmd, State* state);
-char ALUI(int cmd, State* state);
+char LUI(CMD cmd, State* state);
+char AUIPC(CMD cmd, State* state);
+char JAL(CMD cmd, State* state);
+char JALR(CMD cmd, State* state);
+char CJUMPS(CMD cmd, State* state);
+char STORE(CMD cmd, State* state);
+char LOAD(CMD cmd, State* state);
+char ALU(CMD cmd, State* state);
+char ALUI(CMD cmd, State* state);
 //rv32m
-char MULDIV(int cmd, State* s);
+char MULDIV(CMD cmd, State* s);
 //rv32zicsr
-char ZICSR(int cmd, State* s);
-char ECALL(int cmd, State* s);
-
+char ZICSR(CMD cmd, State* s);
 //exception handling
+char ECALL(CMD cmd, State* s);
 void RaiseInterrupt(State* s, unsigned char error_code);
 void M_Catch(State* s, unsigned char error_code, unsigned char exception);
 void MIVT(State* s, unsigned char error_code, unsigned char exception);

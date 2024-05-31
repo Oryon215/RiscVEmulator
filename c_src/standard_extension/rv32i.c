@@ -1,7 +1,14 @@
 #include "../../headers/cpu.h"
 
-char LUI(int cmd, State* s) // load upper immediate
+char LUI(CMD cmd, State* s) // load upper immediate
 {
+        /*
+    LUI - load upper immediate
+    Sets the upper 20 bits of the destination register to the immediate value shifted left by 12 bits.
+    cmd - the command containing the instruction
+    s - the current state of the CPU
+    return: 1 on success
+    */
     char rd;
     int imm;
     U_Type(cmd, &rd, &imm);
@@ -10,8 +17,15 @@ char LUI(int cmd, State* s) // load upper immediate
     return 1;
 }
 
-char AUIPC(int cmd, State* s) // add upper immediate to PC
+char AUIPC(CMD cmd, State* s) // add upper immediate to PC
 {
+    /*
+    AUIPC - add upper immediate to PC
+    Sets the destination register to the sum of the program counter and the immediate value shifted left by 12 bits.
+    cmd - the command containing the instruction
+    s - the current state of the CPU
+    return: 1 on success
+    */
     char rd;
     int imm;
     U_Type(cmd, &rd, &imm);
@@ -20,8 +34,15 @@ char AUIPC(int cmd, State* s) // add upper immediate to PC
     return 1;
 }
 
-char JAL(int cmd, State* s) // jump and link
+char JAL(CMD cmd, State* s) // jump and link
 {
+    /*
+    JAL - jump and link
+    Sets the destination register to the address of the instruction following the JAL. Then jumps to the target address.
+    cmd - the command containing the instruction
+    s - the current state of the CPU
+    return: 1 on success
+    */
     char rd = get_rd(cmd);
     char sign;
     int imm = (cmd >> 31) & get_n(1);
@@ -46,8 +67,15 @@ char JAL(int cmd, State* s) // jump and link
     return 1;
 }
 
-char JALR(int cmd, State* s) // jump and link register
+char JALR(CMD cmd, State* s) // jump and link register
 {
+    /*
+    JALR - jump and link register
+    Sets the destination register to the address of the instruction following the JALR. Then jumps to the target address computed from a base register and an immediate.
+    cmd - the command containing the instruction
+    s - the current state of the CPU
+    return: 1 on success
+    */
     char rd = get_rd(cmd);
     short imm = (cmd >> 20) & get_n(12);
     char sign = (imm >> 11) & 1;
@@ -67,8 +95,15 @@ char JALR(int cmd, State* s) // jump and link register
     return 1;
 }
 
-char CJUMPS(int cmd, State* s) //conditional jumps
+char CJUMPS(CMD cmd, State* s) //conditional jumps
 {
+    /*
+    CJUMPS - conditional jumps
+    Conditionally jumps to a target address if a specified condition is met.
+    cmd - the command containing the instruction
+    s - the current state of the CPU
+    return: 1 on success, 0 otherwise
+    */
     char funct3, rs1, rs2;
     short imm;
     B_Type(cmd, &funct3, &rs1, &imm, &rs2);
@@ -140,12 +175,19 @@ char CJUMPS(int cmd, State* s) //conditional jumps
     return ret;
 }
 
-char STORE(int cmd, State* s) // store in memory
+char STORE(CMD cmd, State* s) // store in memory
 {
+    /*
+    STORE - store in memory
+    Stores the value from a register into memory at the computed address.
+    cmd - the command containing the instruction
+    s - the current state of the CPU
+    return: 1 on success
+    */
     char funct3, rs1, rs2;
     short imm;
     S_Type(cmd, &funct3, &rs1, &rs2, &imm);
-    int address = s->general_purpose[rs1] + imm;
+    Address address = s->general_purpose[rs1] + imm;
     char ret = 0;
     char opcode[32];
     CheckOperation(s, W, address, 1);
@@ -173,12 +215,19 @@ char STORE(int cmd, State* s) // store in memory
     return ret;
 }
 
-char LOAD(int cmd, State* s) // load from memory
+char LOAD(CMD cmd, State* s) // load from memory
 {
+    /*
+    LOAD - load from memory
+    Loads a value from memory into a register.
+    cmd - the command containing the instruction
+    s - the current state of the CPU
+    return: 1 on success
+    */
     char funct3, rd, rs1;
     short imm;
     I_Type(cmd, &funct3, &rs1, &rd, &imm);
-    int address = s->general_purpose[rs1] + imm;
+    Address address = s->general_purpose[rs1] + imm;
     char ret = 0;
     char opcode[32];
     CheckOperation(s, R, address, 1);
@@ -224,8 +273,15 @@ char LOAD(int cmd, State* s) // load from memory
     return ret;
 }
 
-char ALU(int cmd, State* s) // arithmetic and logical operations
+char ALU(CMD cmd, State* s) // arithmetic and logical operations
 {
+    /*
+    ALU - arithmetic and logical unit
+    Performs an immediate logical or arithmetic operation on a register and stores the result in the destination register.
+    cmd - the command containing the instruction
+    s - the current state of the CPU
+    return: 1 on success
+    */
     char rs1, rd, rs2, funct3, funct7;
     R_Type(cmd, &rd, &funct3, &rs1, &rs2, &funct7);
     char ret = 0;
@@ -303,8 +359,15 @@ char ALU(int cmd, State* s) // arithmetic and logical operations
     return ret;
 }
 
-char ALUI(int cmd, State* s) // immediate arithmetic and logical operations
+char ALUI(CMD cmd, State* s) // immediate arithmetic and logical operations
 {
+    /*
+    ALUI - arithmetic and logical unit (immediate)
+    Performs a logical or arithmetic operation between two registers and stores the result in the destination register.
+    cmd - the command containing the instruction
+    s - the current state of the CPU
+    return: 1 on success
+    */
     char funct3, rs1, rd;
     short imm;
     I_Type(cmd, &funct3, &rs1, &rd, &imm);

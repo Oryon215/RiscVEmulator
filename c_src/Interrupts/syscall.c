@@ -1,4 +1,6 @@
-
+/*
+SYSCALL MANAGER
+*/
 #include "../../headers/cpu.h"
 //all syscall includes
 #include <syscall.h>
@@ -61,10 +63,19 @@
 #include <linux/ioprio.h>
 long sys_ni_syscall(void)
 {
+    /*
+    not implemented syscall
+    return: error function not implemented (enosys)
+    */
     return -ENOSYS;
 }
 
 void Syscall_Table(State* s){
+    /*
+    handle user syscalls
+    s - current program state
+    return: void
+    */
     printf("Syscall executed. Syscall number:%d\n", s->general_purpose[a7]);
    switch(s->general_purpose[a7])
         {

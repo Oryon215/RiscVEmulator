@@ -1,12 +1,28 @@
 #include "../../headers/cpu.h"
+/*
+Manager program Traps (interrupts, exceptions)
+*/
 
 void RaiseInterrupt(State* s, unsigned char error_code)
 {
+     /*
+    RaiseInterrupt - Raises an interrupt with a given error code.
+    s - the current state of the CPU
+    error_code - the error code to raise as an interrupt
+    return: void
+    */
     s->csr[mip] = ChangeBit(s->csr[mip], 1, error_code + 1);
 }
 
 void S_Catch(State* s, unsigned char error_code, unsigned char exception)
 {
+    /*
+    S_Catch - Handles supervisor mode interrupts and exceptions.
+    s - the current state of the CPU
+    error_code - the error code of the interrupt/exception
+    exception - flag indicating whether it is an exception (1) or an interrupt (0)
+    return: void
+    */
     if (!exception)
     {
         if ((s->csr[sie] >> error_code) && (s->csr[sip] >> error_code))
@@ -36,6 +52,13 @@ void S_Catch(State* s, unsigned char error_code, unsigned char exception)
 
 void M_Catch(State* s, unsigned char error_code, unsigned char exception)
 {
+    /*
+    M_Catch - Handles machine mode interrupts and exceptions.
+    s - the current state of the CPU
+    error_code - the error code of the interrupt/exception
+    exception - flag indicating whether it is an exception (1) or an interrupt (0)
+    return: void
+    */
     char delegation;
     if (!exception)
     {
@@ -81,6 +104,14 @@ void M_Catch(State* s, unsigned char error_code, unsigned char exception)
 
 void MIVT(State* s, unsigned char error_code, unsigned char exception)
 {
+    /*
+    MIVT - Machine Interrupt Vector Table
+    Handles specific machine mode exceptions by printing error messages and terminating the program.
+    s - the current state of the CPU
+    error_code - the error code of the exception
+    exception - flag indicating whether it is an exception (1) or an interrupt (0)
+    return: void
+    */
     if (!exception)
     {
 
@@ -122,6 +153,14 @@ void MIVT(State* s, unsigned char error_code, unsigned char exception)
 
 void SIVT(State* s, unsigned char error_code, unsigned char exception)
 {
+     /*
+    SIVT - Supervisor Interrupt Vector Table
+    Handles specific supervisor mode exceptions, such as system calls.
+    s - the current state of the CPU
+    error_code - the error code of the exception
+    exception - flag indicating whether it is an exception (1) or an interrupt (0)
+    return: void
+    */
     if (!exception)
     {
     }
@@ -135,8 +174,15 @@ void SIVT(State* s, unsigned char error_code, unsigned char exception)
     }
 }
 
-char ECALL(int cmd, State* s)
+char ECALL(CMD cmd, State* s)
 {
+    /*
+    ECALL - Environment call
+    Triggers an environment call, typically used for system calls or other system-level functions.
+    cmd - the command containing the instruction
+    s - the current state of the CPU
+    return: 1 on success
+    */
     M_Catch(s, 8, 1);
     //printf("ECALL\n");
     return 1;

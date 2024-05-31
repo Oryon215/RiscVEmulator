@@ -1,7 +1,12 @@
 #include "../../headers/cpu.h"
 
-char ZICSR(int cmd, State* s)
+char ZICSR(CMD cmd, State* s)
 {
+    /*
+    Read and write control and status registers
+    cmd - current instrcution
+    s - current program state
+    */
     char funct3, rs1, rd;
     short imm;
     I_Type(cmd, &funct3, &rs1, &rd, &imm);

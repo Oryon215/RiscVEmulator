@@ -1,4 +1,7 @@
 #include "../headers/cpu.h"
+/*
+Manage loading of program
+*/
 
 #define segment_memory_size_index 20
 #define segment_file_size_index 16
@@ -13,11 +16,18 @@
 #define string_table 3
 #define STACK_SIZE 20000
 
-void (*InitAddOn)(State* s);
-void (*AddOn)(State* s);
+typedef char* ELF32;
 
-char* LoadFile(char* filename)
+void (*InitAddOn)(State* s); // initialize add-on function
+void (*AddOn)(State* s); // add-on functionality
+
+ELF32 LoadFile(char* filename)
 {
+    /*
+    Load given file to memory
+    filename - name of file (relative/full path)
+    return: ptr to contents of file (in heap)
+    */
     int fd = open(filename, O_RDONLY);
     if (fd == -1)
     {
@@ -33,8 +43,8 @@ char* LoadFile(char* filename)
     }
     close(fd);
     fd = open(filename, O_RDONLY);
-    char* file_contents = (char*)malloc(size);
-    char* file_contents2[3];
+    ELF32 file_contents = (ELF32)malloc(size);
+    char* file_size[3];
     printf("File Size: %d\n", size);
     printf("File Descriptor: %d\n", fd);
     printf("Num of Bytes Read: %d\n", read(fd, file_contents, size));
@@ -43,6 +53,11 @@ char* LoadFile(char* filename)
 
 void PrintHeader(int* header)
 {
+    /*
+    Print Program Header from file program header table
+    header - ptr to program header in file
+    return: void
+    */
     int p_type = header[0];
     printf("Type: ");
     switch (p_type)
@@ -109,8 +124,14 @@ void PrintHeader(int* header)
     printf("Alignment: %d\n", header[segment_permissions / 4 + 1]);
 }
 
-void LoadSegments(State* s, char* file)
+void LoadSegments(State* s, ELF32 file)
 {
+    /*
+    Load memory segments from file program header
+    s - ptr to State of current process
+    file - ptr to contents of ELF
+    return: void
+    */
     char* memory;
 
     unsigned int size = 0, i;
@@ -162,12 +183,18 @@ void LoadSegments(State* s, char* file)
     s->segment_count = e_phnum + 2;
 }
 
-void LoadSymtab(State* s, char* file)
+void LoadSymtab(State* s, ELF32 file)
 {
+    /*
+    Load program symbol table from ELF file to state for debugging purposes
+    s - ptr to current State of process
+    file - ptr to contents of ELF
+    return: void
+    */
     int e_shoff = ((int*)file)[8];
     short e_shentsize = ((short*)file)[23];
     short e_shnum = ((short*)file)[24];
-    char* section_header = file + e_shoff;
+    ELF32 section_header = file + e_shoff;
     unsigned int size = 0;
     for (int i = 0; i < e_shnum; i++)
     {
@@ -196,12 +223,18 @@ void LoadSymtab(State* s, char* file)
     }
 }
 
-void LoadStrtab(State* s, char* file)
+void LoadStrtab(State* s, ELF32 file)
 {
+    /*
+    Load program string table from ELF file to state for debugging purposes
+    s - ptr to current State of process
+    file - ptr to contents of ELF
+    return: void
+    */
     int e_shoff = ((int*)file)[8];
     short e_shentsize = ((short*)file)[23];
     short e_shnum = ((short*)file)[24];
-    char* section_header = file + e_shoff;
+    ELF32 section_header = file + e_shoff;
     unsigned int size = 0;
     for (int i = 0; i < e_shnum; i++)
     {
@@ -233,12 +266,34 @@ void LoadStrtab(State* s, char* file)
 
 void* LoadAddOn(char* dllname)
 {
+    /*
+    Load Add On Program .so
+    char* dllname - name of .so file
+    return: void ptr to .so file
+    */
     return dlopen(dllname, RTLD_LAZY | RTLD_GLOBAL);
 }
+/*
+RTLD_GLOBAL
+The object's symbols are made available for the relocation processing of any other object.
+In addition, symbol lookup using dlopen(0, mode) and an associated dlsym() allows
+objects loaded with this mode to be searched.
+RTLD_LAZY
+Relocations are performed at an implementation-dependent time, ranging from the time of the dlopen() call until the first reference to a given symbol occurs.
+Specifying RTLD_LAZY should improve performance on implementations supporting dynamic symbol binding as a
+process may not reference all of the functions in any given object.
+And, for systems supporting dynamic symbol resolution for normal process execution,
+this behaviour mimics the normal handling of process execution.
+*/
 
 void* Load(State* s, char* filename, char* addonname) {
-
-    char* file = LoadFile(filename);
+    /*
+    Load all memory from file to process, load add on functions
+    s - current process state
+    filename - ELF file name
+    addonname - Add On file name
+    */
+    ELF32 file = LoadFile(filename);
     int e_entry = ((int*)file)[6];
     printf("Entry Point of File: 0x%x\n", e_entry);
     LoadSegments(s, file);

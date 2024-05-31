@@ -4,6 +4,12 @@
 
 int min(int a, int b)
 {
+    /*
+    get min number out of two
+    a - number
+    b - number
+    return minimum of a and b
+    */
     if (a < b)
         return a;
     return b;
@@ -11,6 +17,12 @@ int min(int a, int b)
 
 int max(int a, int b)
 {
+        /*
+    get max number out of two
+    a - number
+    b - number
+    return maximum of a and b
+    */
     if (a > b)
         return a;
     return b;
@@ -18,6 +30,11 @@ int max(int a, int b)
 
 unsigned int strlen1(char* str)
 {
+    /*
+    get length of given string
+    str - string ptr
+    return string length
+    */
     int i = 0;
     while (str[i] != '\0')
     {
@@ -28,6 +45,12 @@ unsigned int strlen1(char* str)
 
 char strcmp1(char* st1, char* st2)
 {
+    /*
+    compare between strings
+    st1 - string ptr
+    st2 - string ptr
+    return 0 if not equal and 1 otherwise
+    */
     int i = 0;
 
     if (strlen1(st1) != strlen1(st2))
@@ -41,6 +64,11 @@ char strcmp1(char* st1, char* st2)
 
 unsigned char ConvertC(char c)
 {
+    /*
+    convert char to hex value
+    c - char
+    return hex value of char (if has one)
+    */
     if (is_lower(c))
     {
         return c - 'a' + 10;
@@ -57,6 +85,11 @@ unsigned char ConvertC(char c)
 
 unsigned char ConvertSh(short c)
 {
+    /*
+    convert short to hex number
+    c - short composed of 2 chars
+    return symbolic hex value of short
+    */
     char c1 = c % 256;
     char c2 = c >> 8;
     return (ConvertC(c1) << 4 )| ConvertC(c2);
@@ -64,6 +97,12 @@ unsigned char ConvertSh(short c)
 
 void Convert(char* c, short* s)
 {
+    /*
+    convert short s composed of hex symbolic values to char c composed of hexadecimal values
+    c - char ptr
+    s - short ptr
+    return: void
+    */
     int len = strlen1((char *)s) / 2;
     int i;
     for (i = 0; i < len / 4; i++)
@@ -84,6 +123,12 @@ void Convert(char* c, short* s)
 
 char* Complete_Hex(int final_len, int num)
 {
+    /*
+    complete hexadecimal value to length
+    final_len - length of hexadecimal value
+    num - initial value
+    return: string of hex value in length final_len
+    */
     char* buffer = (char*)malloc(final_len);
     char st[8];
     sprintf(st, "%x", num);
@@ -100,6 +145,12 @@ char* Complete_Hex(int final_len, int num)
 
 unsigned int strcpy1(char* dst, char* src)
 {
+    /*
+    copy string from src to dst
+    dst - str ptr
+    src - str ptr
+    return number of chars copied
+    */
     int i, len = strlen1(src);
     memcpy1(dst, src, len);
     dst[len] = 0x0;
@@ -108,6 +159,13 @@ unsigned int strcpy1(char* dst, char* src)
 
 void memcpy1(unsigned char* dst, unsigned char* src, unsigned int n)
 {
+    /*
+    copy memory from one buffer to another
+    dst - ptr buffer
+    src - ptr buffer
+    n - num of chars copied
+    return: void
+    */
     int i;
     for (i = 0; i < n; i++)
     {
@@ -117,6 +175,12 @@ void memcpy1(unsigned char* dst, unsigned char* src, unsigned int n)
 
 void PrintHexString(unsigned char* buff, unsigned int len)
 {
+    /*
+    print string representing hex values
+    buff - string
+    len - length of string
+    return: void
+    */
     int i;
     printf("memory size: %d\n", len);
     for (i = 0; i < len ; i++)
@@ -136,6 +200,13 @@ void PrintHexString(unsigned char* buff, unsigned int len)
 
 void Print2(unsigned char* buff, unsigned int len, char* format)
 {
+    /*
+    print string with addresses in decimal format
+    buff - ptr buffer
+    len - length of buffer
+    format - format of string
+    return: void
+    */
     int i;
     for (i = 0; i < len; i++)
     {
@@ -151,6 +222,13 @@ void Print2(unsigned char* buff, unsigned int len, char* format)
 
 void Print1(unsigned char* buff, unsigned int len, char* format)
 {
+    /*
+    print string without addresses
+    buff - ptr buffer
+    len - length of buffer
+    format - format of string
+    return: void
+    */
     int i;
     for (i = 0; i < len; i++)
     {

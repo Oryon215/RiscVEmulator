@@ -4,6 +4,11 @@
 #define A 0
 #define V 1
 
+/*
+Memory leak detector
+*/
+
+
 typedef unsigned short U16;
 typedef unsigned char U8;
 int syscall_params[] = {1, 1, 1, 1, 1, 5, 5, 5, 4, 4,
@@ -24,20 +29,26 @@ int syscall_params[] = {1, 1, 1, 1, 1, 5, 5, 5, 4, 4,
 4, 4, 3, 3, 1, 3, 4, 2, 3, 3, 3,
 3, 6, 6, 5, 5, 2, 3, 3, 3, 1, 2,
 2, 1, 4, 4, 4, 2, 5, 5, 3, 2, 1,
-2, 4, 6, 6, 5, 3, 2, 6, 5, 5, 5};
+2, 4, 6, 6, 5, 3, 2, 6, 5, 5, 5}; // number of parameters per syscall
 
 typedef struct {
 U8 abits[8192];
 U8 vbits[65536];
-} SM;
+} SM; // secondary map
 
-static SM* PM[65536];
+static SM* PM[65536]; // primary map
 
-static SM* DSM;
-static State* shadow;
+static SM* DSM; // de-initialized secondary map
+static State* shadow; // shadow value state
 
-void RecordAccess(unsigned int address, unsigned char type)
+void RecordAccess(Address address, unsigned char type)
 {
+    /*
+    record wrong memory access
+    address - memory address
+    type - type of access
+    return: void
+    */
     char type_string[16];
     switch (type)
     {
@@ -54,6 +65,11 @@ void RecordAccess(unsigned int address, unsigned char type)
 
 SM* CopySM(SM* sm)
 {
+    /*
+    copy SM contents to new ptr
+    sm - secondary map
+    return: ptr to new SM
+    */
     SM* new_sm = (SM*)malloc(sizeof(SM));
     for (int i = 0; i < 8192; i++)
     {
@@ -66,13 +82,23 @@ SM* CopySM(SM* sm)
     return new_sm;
 }
 
-SM* GetSMForReading(int a)
+SM* GetSMForReading(Address a)
 {
+    /*
+    return SM by address for reading
+    a - address
+    return: ptr to SM in address
+    */
     return PM[a >> 16];
 }
 
-SM* GetSMForWriting(int a)
+SM* GetSMForWriting(Address a)
 {
+    /*
+    return SM by address for writing
+    a - address
+    return: ptr to SM in address
+    */
     SM** sm = PM + (a >> 16);
     if (*sm == DSM)
     {
@@ -81,8 +107,13 @@ SM* GetSMForWriting(int a)
     return *sm;
 }
 
-void GetBits(int a, U8* abits, U8* vbits)
+void GetBits(Address a, U8* abits, U8* vbits)
 {
+    /*
+    return a bits and v bits to out parameters by address
+    a - address
+    return: void
+    */
     SM* sm = GetSMForReading(a);
     U16 addr = a & get_n(16);
     U16 abits_addr = addr >> 3;
@@ -91,8 +122,13 @@ void GetBits(int a, U8* abits, U8* vbits)
     *vbits = sm->vbits[addr];
 }
 
-void SetBits(int a, U8 abits, U8 vbits)
+void SetBits(Addvress a, U8 abits, U8 vbits)
 {
+    /*
+    set v and a bits by address
+    a - address
+    return: void
+    */
     SM* sm = GetSMForWriting(a);
     U16 addr = a & get_n(16);
     U8 abits_addr = addr >> 3;
@@ -101,8 +137,14 @@ void SetBits(int a, U8 abits, U8 vbits)
     sm->vbits[addr] = vbits;
 }
 
-unsigned int LoadVN(unsigned int a, int nbits)
+unsigned int LoadVN(Address a, int nbits)
 {
+    /*
+    load N v-bits in address
+    a - address
+    nbits - number of v bits
+    return: N V-bits
+    */
     int i; unsigned int bits;
     for (int i = 0; i < nbits / 8; i++)
     {
@@ -120,6 +162,11 @@ unsigned int LoadVN(unsigned int a, int nbits)
 
 void SetSegmentVBits(State* s)
 {
+    /*
+    turn on segment v-bits
+    s - state
+    return: void
+    */
     int i, j;
     for (i = 0; i < s->segment_count; i++)
     {
@@ -132,6 +179,11 @@ void SetSegmentVBits(State* s)
 
 void init_add_on(State* s)
 {
+    /*
+    initialize add on
+    s - state
+    return: void
+    */
     printf("ADD ON MEMCHECK INITIALIZED.\n");
     DSM = (SM*)malloc(sizeof(SM));
     shadow = (State*)malloc(sizeof(State));
@@ -157,6 +209,11 @@ void init_add_on(State* s)
 
 void HandleEcall(State* s)
 {
+    /*
+    handle environment call
+    s - state
+    return: void
+    */
     if (shadow->general_purpose[a7] != get_n(32))
     {
         shadow->general_purpose[a7] = get_n(32);
@@ -176,8 +233,14 @@ void HandleEcall(State* s)
 }
 
 
-void HandleALU(State* s, unsigned int cmd)
+void HandleALU(State* s, CMD cmd)
 {
+    /*
+    handle arithmetic and logical operations
+    s - current state
+    cmd - current instruction
+    return: void
+    */
     char rs1, rd, rs2, funct3, funct7;
     R_Type(cmd, &rd, &funct3, &rs1, &rs2, &funct7);
     switch (funct3)
@@ -248,30 +311,51 @@ void HandleALU(State* s, unsigned int cmd)
     }
 }
 
-void HandleLUI(unsigned int cmd)
+void HandleLUI(CMD cmd)
 {
+    /*
+    handle load upper immediate
+    cmd - current instruction
+    return: void
+    */
     char rd;
     int imm;
     U_Type(cmd, &rd, &imm);
     shadow->general_purpose[rd] = get_n(32);
 }
 
-void HandleAUIPC(unsigned int cmd)
+void HandleAUIPC(CMD cmd)
 {
+    /*
+    handle add upper immediate to program counter
+    cmd - current instruction
+    return: void
+    */
     char rd;
     int imm;
     U_Type(cmd, &rd, &imm);
     shadow->general_purpose[rd] = shadow->pc;
 }
 
-void HandleJAL(unsigned int cmd)
+void HandleJAL(CMD cmd)
 {
+    /*
+    handle jump and link
+    cmd - current instruction
+    return: void
+    */
     char rd = get_rd(cmd);
     shadow->general_purpose[rd] = shadow->pc;
 }
 
-void HandleJALR(State* s, unsigned int cmd)
+void HandleJALR(State* s, CMD cmd)
 {
+    /*
+    handle hump and link register
+    s - current state
+    cmd - cuurent instruction
+    return: void
+    */
     char rd = get_rd(cmd);
     char rs1 = (cmd >> 15) & get_n(5);
     shadow->general_purpose[rd]= shadow->pc;
@@ -283,8 +367,14 @@ void HandleJALR(State* s, unsigned int cmd)
     shadow->pc = shadow->general_purpose[rs1];
 }
 
-void HandleCJUMPS(State* s, unsigned int cmd)
+void HandleCJUMPS(State* s, CMD cmd)
 {
+    /*
+    handle conditional jumps
+    s - state
+    cmd - current instruction
+    return: void
+    */
     char funct3, rs1, rs2;
     short imm;
     B_Type(cmd, &funct3, &rs1, &imm, &rs2);
@@ -296,8 +386,14 @@ void HandleCJUMPS(State* s, unsigned int cmd)
     }
 }
 
-void HandleStore(State* s, unsigned int cmd)
+void HandleStore(State* s, CMD cmd)
 {
+    /*
+    handle storing of values
+    s - current state
+    cmd - current instruction
+    return: void
+    */
     char funct3, rs1, rs2;
     short imm;
     S_Type(cmd, &funct3, &rs1, &rs2, &imm);
@@ -332,8 +428,14 @@ void HandleStore(State* s, unsigned int cmd)
     }
 }
 
-void HandleLoad(State* s, unsigned int cmd)
+void HandleLoad(State* s, CMD cmd)
 {
+    /*
+    handle loading of values
+    s - current state
+    cmd - current instruction
+    return: void
+    */
     char funct3, rd, rs1;
     short imm;
     I_Type(cmd, &funct3, &rs1, &rd, &imm);
@@ -355,8 +457,14 @@ void HandleLoad(State* s, unsigned int cmd)
     shadow->general_purpose[rd] = (get_n(32 - nbits) << nbits) | LoadVN(address, nbits);
 }
 
-void HandleALUI(State* s, unsigned int cmd)
+void HandleALUI(State* s, CMD cmd)
 {
+    /*
+    handle arithmetic and logical operations with constants
+    s - state
+    cmd - current instruction
+    return: void
+    */
     char funct3, rs1, rd;
     short imm;
     I_Type(cmd, &funct3, &rs1, &rd, &imm);
@@ -404,6 +512,11 @@ void HandleALUI(State* s, unsigned int cmd)
 
 void addon(State* s)
 {
+    /*
+    execute add on operation
+    s - current process state
+    return: void
+    */
     unsigned int cmd = *(unsigned int*)(s->memory + s->pc);
     unsigned char opcode = cmd & get_n(7);
     switch (opcode) {

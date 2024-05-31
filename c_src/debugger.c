@@ -1,4 +1,7 @@
 #include "../headers/cpu.h"
+/*
+Manage debugging of program
+*/
 
 #define symbol_table_entry_size 16
 #define text_section_index 1
@@ -8,6 +11,12 @@
 
 void Break(State* s, int b)
 {
+    /*
+    set breakpoint at address
+    b - address
+    s - program state
+    return: void
+    */
     s->breakpoints[s->current_breakpoint % MaxBreakpoints] = b;
     s->current_breakpoint ++;
     printf("Breakpoint set at 0x%x.\n", b);
@@ -15,6 +24,12 @@ void Break(State* s, int b)
 
 void BreakString(State* s, char* st)
 {
+    /*
+    parse string for breakpoint instruction
+    s - current state
+    st - string instruction
+    return: void
+    */
     int i = 1;
     char* st2 = st;
     st2[strlen(st2) - 1] = 0x0;
@@ -36,6 +51,12 @@ void BreakString(State* s, char* st)
 
 void PrintSymbol(State* s)
 {
+    /*
+    print symbol from symbol table according to s program counter address
+    s - current state of process
+    return: void
+    /**/
+    */
     for (int i = 0; i < s->symtab_size / symbol_table_entry_size; i++)
     {
         short* ptr_shndx = s->symtab + i * symbol_table_entry_size + section_header_index;
@@ -53,6 +74,12 @@ void PrintSymbol(State* s)
 
 void PrintMemory(State* s, char* st)
 {
+    /*
+    print symbol from memory and its value
+    s - current state of process
+    st - print instruction
+    return: void
+    */
     int i = 1;
     char* st2 = st;
     if (strcmp1(st, "p state"))
@@ -99,6 +126,11 @@ void PrintMemory(State* s, char* st)
 
 void BreakPoint(State* s)
 {
+    /*
+    handle breakpoint input/output
+    s - current state of process
+    return: void
+    */
     printf("%s\n", instruction);
     PrintSymbol(s);
     while (1)
@@ -132,6 +164,12 @@ void BreakPoint(State* s)
 }
 
 int ExtractFirstNumber(const char *str, int base) {
+    /*
+    extract first number from string
+    string - string of chars
+    base - numeric base of number
+    return number (int)
+    */
     char *endptr;
     long num = strtol(str, &endptr, base);
 
@@ -140,6 +178,11 @@ int ExtractFirstNumber(const char *str, int base) {
 
 void CheckBreapoints(State* s)
 {
+    /*
+    check if program called breakpoints
+    s - current state of process
+    return: void
+    */
     for (int i = 0; i < s->current_breakpoint; i++)
     {
         if (s->pc == s->breakpoints[i])
