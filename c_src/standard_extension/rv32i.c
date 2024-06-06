@@ -5,7 +5,7 @@ char LUI(CMD cmd, State* s) // load upper immediate
         /*
     LUI - load upper immediate
     Sets the upper 20 bits of the destination register to the immediate value shifted left by 12 bits.
-    cmd - the command containing the instruction
+    cmd  - the command containing the instruction
     s - the current state of the CPU
     return: 1 on success
     */

@@ -1,6 +1,9 @@
 #include "../headers/cpu.h"
 State* MakeState1()
 {
+    /*
+    return: new state struct ptr ready for use 
+    */
     State* s = (State*)malloc(sizeof(State));
     s->csr[misa] = 0;
     s->csr[misa] = ChangeBit(s->csr[misa], 5, 7, 9, 13, 19, 32); // 32 bit, I, M, Zicsr and S Mode extensions
@@ -24,6 +27,11 @@ State* MakeState1()
 }
 
 void MakeStateMemory1(State* s) {
+    /*
+    Manually manage state memory
+    s - state ptr (State*)
+    return: void
+    */
     printf("Enter memory size:\n");
     scanf("%d", &s->memory_size);
     s->memory = (unsigned char*)malloc(s->memory_size * sizeof(unsigned char));
@@ -37,6 +45,12 @@ void MakeStateMemory1(State* s) {
 
 int main(int argc, char** argv)
 {
+    /*
+    Manage process run
+    argc - argument count (int)
+    argv - argument vector (char**)
+    return: 1 on success 
+    */
     char* filename = "./program/a.out";
     char* dllname = "./c_src/tools/null.so";
     if (argc > 1)
