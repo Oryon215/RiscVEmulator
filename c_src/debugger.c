@@ -56,7 +56,7 @@ void PrintSymbol(State* s)
     s - current state of process
     return: void
     /**/
-    */
+
     for (int i = 0; i < s->symtab_size / symbol_table_entry_size; i++)
     {
         short* ptr_shndx = s->symtab + i * symbol_table_entry_size + section_header_index;

@@ -76,7 +76,7 @@ void Syscall_Table(State* s){
     s - current program state
     return: void
     */
-    printf("Syscall executed. Syscall number:%d\n", s->general_purpose[a7]);
+    //printf("Syscall executed. Syscall number:%d\n", s->general_purpose[a7]);
    switch(s->general_purpose[a7])
         {
         case 0:
@@ -252,7 +252,8 @@ void Syscall_Table(State* s){
             s->general_purpose[a7] = openat((int)s->general_purpose[a0], (const char*)&s->memory[s->general_purpose[a1]], (int)s->general_purpose[a2]);
             break;
         case 57:
-            //s->general_purpose[a7] = close((int)s->general_purpose[a0]);
+            if ((int)s->general_purpose[a0] != 1)
+                s->general_purpose[a7] = close((int)s->general_purpose[a0]);
             break;
         case 58:
             s->general_purpose[a7] = vhangup();

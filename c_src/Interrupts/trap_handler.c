@@ -184,7 +184,7 @@ char ECALL(CMD cmd, State* s)
     return: 1 on success
     */
     M_Catch(s, 8, 1);
-    //printf("ECALL\n");
+    strcpy1(instruction, "ECALL\n");
     return 1;
 
 }

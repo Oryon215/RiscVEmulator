@@ -13,7 +13,7 @@ void UnimplementedInstruction(CMD cmd, State* s)
     cmd - instruction contents
     s - process state
     */
-    printf("Error. Unrecognized instruction in %d.\nInstruction encoding: %x.\n", s->pc, cmd);
+    printf("Error. Unrecognized instruction in %x.\nInstruction encoding: %x.\n", s->pc, cmd);
 }
 
 void EmulateInstruction(CMD cmd, State* s){
@@ -23,6 +23,7 @@ void EmulateInstruction(CMD cmd, State* s){
     s - process state
     return: void
     */
+    //printf("pc=%x\n", s->pc);
     //printf("ip=%x\n", cmd);
     CheckBreapoints(s);
     char opcode = cmd & get_n(7);

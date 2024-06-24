@@ -1,4 +1,4 @@
-#include "../../headers/types.h"
+#include "../../headers/cpu.h"
 #include <stdio.h>
 /*
 Risc-V instruction types interface

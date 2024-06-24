@@ -122,7 +122,7 @@ void GetBits(Address a, U8* abits, U8* vbits)
     *vbits = sm->vbits[addr];
 }
 
-void SetBits(Addvress a, U8 abits, U8 vbits)
+void SetBits(Address a, U8 abits, U8 vbits)
 {
     /*
     set v and a bits by address
@@ -168,11 +168,11 @@ void SetSegmentVBits(State* s)
     return: void
     */
     int i, j;
-    for (i = 0; i < s->segment_count; i++)
+    for (i = 0; i < s->segment_count - 1; i++)
     {
         for (j = 0; j < s->memory_segments[i].size; j++)
         {
-            SetBits(s->memory_segments[i].addr + j, get_n(8), get_n(8));
+            SetBits(s->memory_segments[i].addr + j, 1, get_n(8));
         }
     }
 }
@@ -191,6 +191,10 @@ void init_add_on(State* s)
    for (int i = 0; i < 8192; i++)
    {
        DSM->abits[i] = get_n(8);
+   }
+   for(int i = 0; i < 65536; i++)
+   {
+       DSM->vbits[i] = 0;
    }
    for (int i = 0; i < 65536; i++)
    {

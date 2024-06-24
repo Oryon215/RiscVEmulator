@@ -188,6 +188,7 @@ char STORE(CMD cmd, State* s) // store in memory
     short imm;
     S_Type(cmd, &funct3, &rs1, &rs2, &imm);
     Address address = s->general_purpose[rs1] + imm;
+    //printf("address:%x\n", address);
     char ret = 0;
     char opcode[32];
     CheckOperation(s, W, address, 1);
@@ -228,6 +229,7 @@ char LOAD(CMD cmd, State* s) // load from memory
     short imm;
     I_Type(cmd, &funct3, &rs1, &rd, &imm);
     Address address = s->general_purpose[rs1] + imm;
+    //printf("%x\n", address);
     char ret = 0;
     char opcode[32];
     CheckOperation(s, R, address, 1);

@@ -165,6 +165,7 @@ void LoadSegments(State* s, ELF32 file)
         printf("Segment Number %d --\n", i);
         ptr = file + e_phoff + i * e_phentsize;
         address = *(ptr + segment_va_index/4) - s->base_address;
+        printf("%d %d %d\n", address, *(ptr + segment_file_offset_index/4), *(ptr + segment_file_size_index/4));
         memcpy1(s->memory + address, file + *(ptr + segment_file_offset_index/4), *(ptr + segment_file_size_index/4));
         PrintHeader(ptr);
         printf("\n");
@@ -180,7 +181,7 @@ void LoadSegments(State* s, ELF32 file)
     s->memory_segments[i].size = STACK_SIZE;
 
 
-    s->segment_count = e_phnum + 2;
+    s->segment_count = e_phnum + 1;
 }
 
 void LoadSymtab(State* s, ELF32 file)
